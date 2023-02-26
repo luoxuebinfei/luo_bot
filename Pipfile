@@ -1,0 +1,22 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+nb-cli = "*"
+nonebot2 = {extras = ["fastapi"], version = "*"}
+nonebot-adapter-onebot = "*"
+"ruamel.yaml" = "*"
+aiohttp = "*"
+diskcache = "*"
+tenacity = "*"
+picimagesearch = "*"
+cachetools = "*"
+nonebot-plugin-setu = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.11"
+python_full_version = "3.11.1"

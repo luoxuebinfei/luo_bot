@@ -1,0 +1,10 @@
+picsearch_cache/
+accounts/
+/log/
+loliconImages/
+data/
+configs/
+
+.env
+.env.dev
+.env.prod
