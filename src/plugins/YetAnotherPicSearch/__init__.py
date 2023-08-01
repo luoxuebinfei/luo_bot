@@ -248,7 +248,8 @@ async def send_forward_msg(
 ) -> None:
     if index is not None:
         msg_list = [f"第 {index + 1} 张图片的搜索结果："] + msg_list
-    msg_list.append("如结果中没有匹配的结果，请尝试将图手动裁切使得图片特征明显后再次搜索（例如在群聊截图中的小图片）。如还是没有，请手动使用Google、Yandex等网站进行尝试。")
+    msg_list.append(
+        "如结果中没有匹配的结果，请尝试将图手动裁切使得图片特征明显后再次搜索（例如在群聊截图中的小图片）。如还是没有，请手动使用Google、Yandex等网站进行尝试。")
     await bot.send_forward_msg(
         user_id=event.user_id if isinstance(event, PrivateMessageEvent) else 0,
         group_id=event.group_id if isinstance(event, GroupMessageEvent) else 0,

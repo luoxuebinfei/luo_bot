@@ -1,12 +1,11 @@
-# qq_bot
+# qq_NoneBot
 
-## How to start
+## 项目使用的插件
+- nonebot_plugin_gocqhttp
+- nonebot_plugin_apscheduler
 
-1. generate project using `nb create` .
-2. create your plugin using `nb plugin create` .
-3. writing your plugins under `qq_bot/plugins` folder.
-4. run your bot using `nb run` .
-
-## Documentation
-
-See [Docs](https://v2.nonebot.dev/)
+## 已实现功能
+1. 优惠推送
+    - 5分钟内相似度过高的文本不推送
+    - 自动清理超过5分钟的推送
+2. 搜图

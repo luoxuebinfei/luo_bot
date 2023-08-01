@@ -2,14 +2,9 @@
 <module type="PYTHON_MODULE" version="4">
   <component name="NewModuleRootManager">
     <content url="file://$MODULE_DIR$">
-      <sourceFolder url="file://$MODULE_DIR$/qq_bot" isTestSource="false" />
-      <excludeFolder url="file://$MODULE_DIR$/venv" />
       <excludeFolder url="file://$MODULE_DIR$/accounts" />
-      <excludeFolder url="file://$MODULE_DIR$/log" />
       <excludeFolder url="file://$MODULE_DIR$/picsearch_cache" />
-      <excludeFolder url="file://$MODULE_DIR$/loliconImages" />
-      <excludeFolder url="file://$MODULE_DIR$/.idea/dataSources" />
-      <excludeFolder url="file://$MODULE_DIR$/data" />
+      <excludeFolder url="file://$MODULE_DIR$/.git231" />
     </content>
     <orderEntry type="jdk" jdkName="Pipenv (qq_NoneBot)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
