@@ -16,6 +16,10 @@ picimagesearch = "*"
 tenacity = "*"
 yarl = "*"
 cachetools = "*"
+pyexecjs = "*"
+requests-toolbelt = "*"
+pywebview = "*"
+cloudscraper = "*"
 
 [dev-packages]
 

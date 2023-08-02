@@ -62,17 +62,26 @@ async def _(bot: Bot) -> None:
         )
 
 
-# 消息中是否含有图片
 def has_images(event: MessageEvent) -> bool:
+    """
+    消息中是否含有图片
+    :param event:
+    :return: bool
+    """
     message = event.reply.message if event.reply else event.message
     return bool([i for i in message if i.type == "image"])
 
 
 def to_me_with_images(bot: Bot, event: MessageEvent) -> bool:
+    # 提取消息纯文本
     plain_text = event.message.extract_plain_text()
-    if plain_text.startswith("搜图"):
+    # 解决群聊中他人发送以 '搜图' 命令开头图片在后的消息，导致提示信息发送两次的问题
+    command_start_pattern = "|".join(re.escape(start) for start in config.command_start)  # 对命令开头进行读取拼接
+    pattern = r'^(' + command_start_pattern + r')搜图.*'
+    if re.match(pattern, event.message.__str__()):
         return False
     has_image = has_images(event)
+    # 用于私聊中发送图片后立即搜图，与设置有关
     if isinstance(event, PrivateMessageEvent):
         return has_image and config.search_immediately
     # 群里回复机器人发送的消息时，必须带上 "搜图" 才会搜图，否则会被无视
@@ -88,7 +97,7 @@ def to_me_with_images(bot: Bot, event: MessageEvent) -> bool:
 
 
 IMAGE_SEARCH = on_message(rule=Rule(to_me_with_images), priority=5)
-IMAGE_SEARCH_MODE = on_command("搜图", priority=5)
+IMAGE_SEARCH_MODE = on_command(r"搜图", priority=5)
 
 
 @IMAGE_SEARCH_MODE.handle()
@@ -271,12 +280,14 @@ async def send_forward_msg(
 @IMAGE_SEARCH_MODE.got("IMAGES", prompt="请发送图片")
 async def handle_image_search(bot: Bot, event: MessageEvent, matcher: Matcher) -> None:
     # matcher.get_arg()获取消息
-    # 输入“退出搜图模式”即可退出
+    # 输入“退出搜图”即可退出
     try:
-        if matcher.get_arg("IMAGES").extract_plain_text() == ("退出搜图模式" or "exit"):
+        command_start_pattern = "|".join(re.escape(start) for start in config.command_start)  # 对命令开头进行读取拼接
+        pattern = (r'^(' + command_start_pattern + r')退出搜图') + r"|" + (r'^(' + command_start_pattern + r')exit')
+        if re.match(pattern, matcher.get_arg("IMAGES").extract_plain_text()):
             await matcher.finish("已退出搜图模式")
     except AttributeError as e:
-        if matcher.get_arg("IMAGES") == ("退出搜图模式" or "exit"):
+        if matcher.get_arg("IMAGES") == ("退出搜图" or "exit"):
             await matcher.finish("已退出搜图模式")
     image_urls_with_md5 = get_image_urls_with_md5(event)
     if not image_urls_with_md5:

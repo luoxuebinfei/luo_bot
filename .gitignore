@@ -143,6 +143,5 @@ dmypy.json
 
 # cache
 picsearch_cache/
-.git231
 
 # End of https://www.toptal.com/developers/gitignore/api/python
