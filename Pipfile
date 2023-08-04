@@ -34,6 +34,7 @@ pydantic = "~=1.10.12"
 pyquery = "~=2.0.0"
 python-qbittorrent = "~=0.4.3"
 tinydb = "~=4.8.0"
+js2py = "*"
 
 [dev-packages]
 

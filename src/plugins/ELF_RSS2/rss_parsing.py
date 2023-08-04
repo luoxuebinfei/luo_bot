@@ -38,6 +38,12 @@ HEADERS = {
 
 
 async def filter_and_validate_rss(rss: Rss, bot: Bot) -> Rss:
+    """
+    用于过滤和验证RSS订阅的用户ID、群组ID和服务器频道ID列表
+    :param rss:
+    :param bot:
+    :return:
+    """
     if rss.user_id:
         rss.user_id = await filter_valid_user_id_list(bot, rss.user_id)
     if rss.group_id:
@@ -50,6 +56,12 @@ async def filter_and_validate_rss(rss: Rss, bot: Bot) -> Rss:
 
 
 async def save_first_time_fetch(rss: Rss, new_rss: Dict[str, Any]) -> None:
+    """
+    将新RSS条目保存到JSON文件中
+    :param rss:
+    :param new_rss:
+    :return:
+    """
     _file = DATA_PATH / f"{Rss.handle_name(rss.name)}.json"
     result = [cache_filter(entry) for entry in new_rss["entries"]]
     for r in result:
@@ -69,6 +81,11 @@ async def save_first_time_fetch(rss: Rss, new_rss: Dict[str, Any]) -> None:
 
 # 抓取 feed，读取缓存，检查更新，对更新进行处理
 async def start(rss: Rss) -> None:
+    """
+    抓取 feed，读取缓存，检查更新，对更新进行处理
+    :param rss:
+    :return:
+    """
     bot: Bot = await get_bot()  # type: ignore
     if bot is None:
         return
@@ -116,6 +133,12 @@ async def start(rss: Rss) -> None:
 
 
 async def auto_stop_and_notify_admin(rss: Rss, bot: Bot) -> None:
+    """
+    用于自动停止RSS订阅更新并向管理员发送通知
+    :param rss:
+    :param bot:
+    :return:
+    """
     rss.stop = True
     rss.upsert()
     tr.delete_job(rss)
@@ -134,6 +157,13 @@ async def auto_stop_and_notify_admin(rss: Rss, bot: Bot) -> None:
 async def fetch_rss_backup(
     rss: Rss, session: aiohttp.ClientSession, proxy: Optional[str]
 ) -> Dict[str, Any]:
+    """
+    用于从备用的RSSHub地址获取RSS信息
+    :param rss:
+    :param session:
+    :param proxy:
+    :return:
+    """
     d = {}
     for rsshub_url in config.rsshub_backup:
         rss_url = rss.get_url(rsshub=rsshub_url)
@@ -151,6 +181,11 @@ async def fetch_rss_backup(
 
 # 获取 RSS 并解析为 json
 async def fetch_rss(rss: Rss) -> Tuple[Dict[str, Any], bool]:
+    """
+    获取 RSS 并解析为 json
+    :param rss:
+    :return:
+    """
     rss_url = rss.get_url()
     # 对本机部署的 RSSHub 不使用代理
     local_host = ["localhost", "127.0.0.1"]

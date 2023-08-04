@@ -170,6 +170,7 @@ async def handle_summary(rss: Rss, tmp_state: Dict[str, Any]) -> str:
 async def handle_summary(rss: Rss, item: Dict[str, Any], tmp: str) -> str:
     try:
         tmp += handle_html_tag(html=Pq(get_summary(item)))
+        print(tmp)
     except Exception as e:
         logger.warning(f"{rss.name} 没有正文内容！{e}")
     return tmp

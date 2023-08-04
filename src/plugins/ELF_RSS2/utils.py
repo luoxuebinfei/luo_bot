@@ -29,6 +29,11 @@ bot_offline = False
 def get_http_caching_headers(
     headers: Optional[Mapping[str, Any]],
 ) -> Dict[str, Optional[str]]:
+    """
+    用于从给定的HTTP响应头信息中获取缓存相关的字段（"Last-Modified" 和 "ETag"），并以字典形式返回
+    :param headers:
+    :return:
+    """
     return (
         {
             "Last-Modified": headers.get("Last-Modified") or headers.get("Date"),
@@ -40,6 +45,11 @@ def get_http_caching_headers(
 
 
 def convert_size(size_bytes: int) -> str:
+    """
+    用于将字节数转换为易读的文件大小格式（以B、KB、MB、GB、TB为单位）
+    :param size_bytes:
+    :return:
+    """
     if size_bytes == 0:
         return "0 B"
     size_name = ("B", "KB", "MB", "GB", "TB")
@@ -51,6 +61,7 @@ def convert_size(size_bytes: int) -> str:
 
 def cached_async(cache, key=hashkey):  # type: ignore
     """
+    用于在异步函数的执行结果上添加缓存功能，以减少重复计算和提高性能
     https://github.com/tkem/cachetools/commit/3f073633ed4f36f05b57838a3e5655e14d3e3524
     """
 
@@ -78,12 +89,22 @@ def cached_async(cache, key=hashkey):  # type: ignore
 
 @cached_async(TTLCache(maxsize=1, ttl=300))  # type: ignore
 async def get_bot_friend_list(bot: Bot) -> List[int]:
+    """
+    获取好友列表
+    :param bot:
+    :return:
+    """
     friend_list = await bot.get_friend_list()
     return [i["user_id"] for i in friend_list]
 
 
 @cached_async(TTLCache(maxsize=1, ttl=300))  # type: ignore
 async def get_bot_group_list(bot: Bot) -> List[int]:
+    """
+    获取群组列表
+    :param bot:
+    :return:
+    """
     group_list = await bot.get_group_list()
     return [i["group_id"] for i in group_list]
 
@@ -92,6 +113,12 @@ async def get_bot_group_list(bot: Bot) -> List[int]:
 async def get_bot_guild_channel_list(
     bot: Bot, guild_id: Optional[str] = None
 ) -> List[str]:
+    """
+    获取QQ机器人（Bot）的服务器（Guild）和频道（Channel）列表
+    :param bot:
+    :param guild_id:
+    :return:
+    """
     guild_list = await bot.get_guild_list()
     if guild_id is None:
         return [i["guild_id"] for i in guild_list]
@@ -102,6 +129,11 @@ async def get_bot_guild_channel_list(
 
 
 def get_torrent_b16_hash(content: bytes) -> str:
+    """
+    从torrent文件内容中提取40位的info hash，并以base16编码的形式返回
+    :param content:
+    :return:
+    """
     import magneturi
 
     # mangetlink = magneturi.from_torrent_file(torrentname)
@@ -119,6 +151,7 @@ def get_torrent_b16_hash(content: bytes) -> str:
 
 
 async def send_message_to_admin(message: str, bot: Optional[Bot] = None) -> None:
+    """发送一个QQ私聊消息给管理员"""
     if bot is None:
         bot: Bot = await get_bot()  # type: ignore
     if bot is None:
@@ -222,6 +255,11 @@ def partition_list(
 
 
 async def send_message_to_telegram_admin(message: str) -> None:
+    """
+    将指定的消息通过Telegram发送给管理员
+    :param message:
+    :return:
+    """
     try:
         async with ClientSession(raise_for_status=True) as session:
             await session.post(
@@ -237,6 +275,10 @@ async def send_message_to_telegram_admin(message: str) -> None:
 
 
 async def get_bot() -> Optional[Bot]:
+    """
+    获取QQ机器人实例
+    :return:
+    """
     global bot_offline
     bot: Optional[Bot] = None
     try:
