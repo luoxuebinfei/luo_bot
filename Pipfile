@@ -4,22 +4,36 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-nonebot2 = {extras = ["fastapi"], version = "*"}
 nonebot-adapter-onebot = "*"
 requests = "*"
 bs4 = "*"
 fake-useragent = "*"
-arrow = "*"
-aiohttp = "*"
+arrow = "~=1.2.3"
 diskcache = "*"
 picimagesearch = "*"
-tenacity = "*"
+tenacity = "~=8.2.2"
 yarl = "*"
-cachetools = "*"
+cachetools = "~=5.3.1"
 pyexecjs = "*"
 requests-toolbelt = "*"
 pywebview = "*"
 cloudscraper = "*"
+aiohttp = {version = "~=3.8.5", extras = ["speedups"]}
+async-timeout = "~=4.0.2"
+bbcode = "~=1.1.0"
+emoji = "~=2.7.0"
+feedparser = "~=6.0.10"
+deep-translator = "~=1.11.4"
+imagehash = "~=4.3.1"
+magneturi = "~=1.3"
+nonebot-plugin-guild-patch = "~=0.2.3"
+nonebot2 = {version = "~=2.0.1", extras = ["fastapi"]}
+pikpakapi = "~=0.1.2"
+pillow = "~=10.0.0"
+pydantic = "~=1.10.12"
+pyquery = "~=2.0.0"
+python-qbittorrent = "~=0.4.3"
+tinydb = "~=4.8.0"
 
 [dev-packages]
 
