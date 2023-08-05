@@ -6,6 +6,7 @@
       <excludeFolder url="file://$MODULE_DIR$/picsearch_cache" />
       <excludeFolder url="file://$MODULE_DIR$/.git231" />
       <excludeFolder url="file://$MODULE_DIR$/data" />
+      <excludeFolder url="file://$MODULE_DIR$/cache" />
     </content>
     <orderEntry type="jdk" jdkName="Pipenv (qq_NoneBot)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />

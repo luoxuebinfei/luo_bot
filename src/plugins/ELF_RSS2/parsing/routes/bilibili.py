@@ -11,6 +11,7 @@ from pyquery import PyQuery as Pq
 from ...rss_class import Rss
 from .. import ParsingBase, handle_html_tag
 from ..utils import get_author, get_summary
+from ...config import CACHE_PATH
 
 
 # 处理正文 处理网页 tag
@@ -50,8 +51,9 @@ async def get_screen_image(param, file_name):
     """
     path = os.path.join(os.path.dirname(
         os.path.dirname(__file__)), "js", "bili-puppeteer.js")
-    save_path = os.path.join(os.path.dirname(
-        os.path.dirname(__file__)), "cache", f"{file_name}")
+    # save_path = os.path.join(os.path.dirname(
+    #     os.path.dirname(__file__)), "cache", f"{file_name}")
+    save_path = CACHE_PATH / f"{file_name}"  # 规范化路径
     process = await asyncio.create_subprocess_exec("node", path, param, save_path, stdout=asyncio.subprocess.PIPE,
                                                    stderr=asyncio.subprocess.PIPE, )
     _, _ = await process.communicate()
@@ -69,9 +71,10 @@ async def handle_summary(rss: Rss, item: Dict[str, Any], tmp: str) -> str:
     """
     id = re.split(r"/", item["link"])[-1]  # 动态ID
     file_name = f"bili_dynamic_{id}.png"  # 文件名
-    path1 = os.path.dirname(
-        os.path.dirname(__file__))  # 当前脚本的运行目录"bot.py所在目录\src\plugins\ELF_RSS2\parsing"
-    abs_path = os.path.join(path1, "cache", file_name)  # 保存的图片绝对路径
+    # path1 = os.path.dirname(
+    #     os.path.dirname(__file__))  # 当前脚本的运行目录"bot.py所在目录\src\plugins\ELF_RSS2\parsing"
+    # abs_path = os.path.join(path1, "cache", file_name)  # 保存的图片绝对路径
+    abs_path = CACHE_PATH / f"{file_name}"
     if not os.path.exists(abs_path):
         # 如果截图文件不存在，则使用浏览器截图
         _ = await get_screen_image(id, file_name)

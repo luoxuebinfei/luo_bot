@@ -7,7 +7,7 @@ from nonebot.plugin import PluginMetadata
 
 from . import command
 from . import my_trigger as tr
-from .config import DATA_PATH, config
+from .config import DATA_PATH, config, CACHE_PATH
 from .rss_class import Rss
 from .utils import send_message_to_admin
 
@@ -34,7 +34,9 @@ async def start(bot: Bot) -> None:
     # 启动后检查 data 目录，不存在就创建
     if not DATA_PATH.is_dir():
         DATA_PATH.mkdir()
-
+    # 启动后检查 cache 目录，不存在就创建
+    if not CACHE_PATH.is_dir():
+        CACHE_PATH.mkdir(parents=True)
     boot_message = (
         f"Version: v{VERSION}\nAuthor：Quan666\nhttps://github.com/Quan666/ELF_RSS"
     )

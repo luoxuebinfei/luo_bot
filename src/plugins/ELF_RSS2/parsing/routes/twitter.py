@@ -15,6 +15,7 @@ from ..handle_images import (
     handle_img_combo_with_content,
 )
 from ..utils import get_summary
+from ...config import CACHE_PATH
 
 
 # 处理图片
@@ -76,15 +77,16 @@ async def get_screen_image(param, file_name):
     """
     path = os.path.join(os.path.dirname(
         os.path.dirname(__file__)), "js", "twitter-puppeteer.js")
-    save_path = os.path.join(os.path.dirname(
-        os.path.dirname(__file__)), "cache", f"{file_name}")
+    # save_path = os.path.join(os.path.dirname(
+    #     os.path.dirname(__file__)), "cache", f"{file_name}")
+    save_path = CACHE_PATH / f"{file_name}"
     process = await asyncio.create_subprocess_exec("node", path, param, save_path, stdout=asyncio.subprocess.PIPE,
                                                    stderr=asyncio.subprocess.PIPE, )
     _, _ = await process.communicate()
     return
 
 
-@ParsingBase.append_handler(parsing_type="summary", rex="/twitter/user/")
+@ParsingBase.append_handler(parsing_type="summary", rex="/twitter/user/", priority=13)
 async def handle_summary(rss: Rss, item: Dict[str, Any], tmp: str) -> str:
     """
     将正文文字替换为图片发送
@@ -95,15 +97,17 @@ async def handle_summary(rss: Rss, item: Dict[str, Any], tmp: str) -> str:
     """
     id = re.split(r"/", item["link"])[-1]  # 动态ID
     file_name = f"twitter_status_{id}.png"  # 文件名
-    path1 = os.path.dirname(
-        os.path.dirname(__file__))  # 当前脚本的运行目录"bot.py所在目录\src\plugins\ELF_RSS2\parsing"
-    abs_path = os.path.join(path1, "cache", file_name)  # 保存的图片绝对路径
+    # path1 = os.path.dirname(
+    #     os.path.dirname(__file__))  # 当前脚本的运行目录"bot.py所在目录\src\plugins\ELF_RSS2\parsing"
+    # abs_path = os.path.join(path1, "cache", file_name)  # 保存的图片绝对路径
+    abs_path = CACHE_PATH / f"{file_name}"
     if not os.path.exists(abs_path):
         # 如果截图文件不存在，则使用浏览器截图
         _ = await get_screen_image(id, file_name)
     if os.path.exists(abs_path):
-        image_msg = f"[CQ:image,file=file:///{abs_path},subType=0,url=]"
-        tmp = image_msg
+        image_msg = fr"[CQ:image,file=file:///{abs_path},subType=0,url=]"
+        re_str = item['summary']
+        tmp = tmp.replace(re_str, image_msg)
         return tmp
     else:
         # 如果文件不存在，发送文字消息

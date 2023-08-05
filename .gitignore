@@ -144,7 +144,7 @@ dmypy.json
 # cache
 picsearch_cache/
 data/
-src/plugins/ELF_RSS2/parsing/cache
+cache/
 
 # rely依赖
 node_modules/
