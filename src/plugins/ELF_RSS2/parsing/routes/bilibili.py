@@ -8,6 +8,7 @@ import execjs
 from nonebot.log import logger
 from pyquery import PyQuery as Pq
 
+from ..handle_images import get_pic_base64
 from ...rss_class import Rss
 from .. import ParsingBase, handle_html_tag
 from ..utils import get_author, get_summary
@@ -79,9 +80,20 @@ async def handle_summary(rss: Rss, item: Dict[str, Any], tmp: str) -> str:
         # 如果截图文件不存在，则使用浏览器截图
         _ = await get_screen_image(id, file_name)
     if os.path.exists(abs_path):
-        image_msg = f"[CQ:image,file=file:///{abs_path},subType=0,url=]"
-        tmp = image_msg
-        return tmp
+        # base64形式上传
+        with open(abs_path, 'rb') as f:
+            image_data = f.read()
+        if img_base64 := get_pic_base64(image_data):
+            image_msg = fr"[CQ:image,file=base64://{img_base64},subType=0,url=]"
+            os.remove(abs_path)  # 将截图删除
+            # 定义正则表达式模式，使用非贪婪匹配来匹配所有可能的翻译之前的所有文字
+            pattern = r".*?(?=(谷歌翻译|Deepl翻译|百度翻译))"
+            if re.search(pattern,tmp):
+                # 使用re.sub()进行正则替换
+                tmp = re.sub(pattern, image_msg + "\n", tmp, count=1,flags=re.DOTALL)
+            else:
+                tmp = image_msg
+            return tmp
     else:
         # 如果文件不存在，发送文字消息
         return tmp

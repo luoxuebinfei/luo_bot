@@ -54,22 +54,22 @@ async def handle_check_update(rss: Rss, state: Dict[str, Any]):
             continue
         # 检查是否匹配关键词 使用 down_torrent_keyword 字段,命名是历史遗留导致，实际应该是白名单关键字
         if rss.down_torrent_keyword and not re.search(
-            rss.down_torrent_keyword, summary
+                rss.down_torrent_keyword, summary
         ):
             write_item(db, item)
             change_data.remove(item)
             continue
         # 检查是否匹配黑名单关键词 使用 black_keyword 字段
         if rss.black_keyword and (
-            re.search(rss.black_keyword, item["title"])
-            or re.search(rss.black_keyword, summary)
+                re.search(rss.black_keyword, item["title"])
+                or re.search(rss.black_keyword, summary)
         ):
             write_item(db, item)
             change_data.remove(item)
             continue
         # 检查是否只推送有图片的消息
         if (rss.only_pic or rss.only_has_pic) and not re.search(
-            r"<img[^>]+>|\[img]", summary
+                r"<img[^>]+>|\[img]", summary
         ):
             logger.info(f"{rss.name} 已开启仅图片/仅含有图片，该消息没有图片，将跳过")
             write_item(db, item)
@@ -204,7 +204,9 @@ async def handle_picture(rss: Rss, item: Dict[str, Any], tmp: str) -> str:
     # 判断是否开启了只推送标题
     if rss.only_title:
         return ""
-
+    # 匹配到bilibili中有图片则不发送图片
+    if re.match(r"^(?:/twitter/user/|/bilibili/user/dynamic/)", rss.url):
+        return ""
     res = ""
     try:
         res += await handle_img(
@@ -212,6 +214,7 @@ async def handle_picture(rss: Rss, item: Dict[str, Any], tmp: str) -> str:
             img_proxy=rss.img_proxy,
             img_num=rss.max_image_number,
         )
+
     except Exception as e:
         logger.warning(f"{rss.name} 没有正文内容！{e}")
 
@@ -271,10 +274,10 @@ async def handle_date(item: Dict[str, Any]) -> str:
 # 发送消息
 @ParsingBase.append_handler(parsing_type="after")
 async def handle_message(
-    rss: Rss,
-    state: Dict[str, Any],
-    item: Dict[str, Any],
-    item_msg: str,
+        rss: Rss,
+        state: Dict[str, Any],
+        item: Dict[str, Any],
+        item_msg: str,
 ) -> str:
     if rss.send_forward_msg:
         return ""

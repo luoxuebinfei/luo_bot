@@ -16,6 +16,7 @@ from ..handle_images import (
 )
 from ..utils import get_summary
 from ...config import CACHE_PATH
+from ..handle_images import get_pic_base64
 
 
 # 处理图片
@@ -24,7 +25,8 @@ async def handle_picture(rss: Rss, item: Dict[str, Any], tmp: str) -> str:
     # 判断是否开启了只推送标题
     if rss.only_title:
         return ""
-
+    if re.match(r"^/twitter/user/", rss.url):
+        return ""
     res = await handle_img(
         item=item,
         img_proxy=rss.img_proxy,
@@ -97,18 +99,27 @@ async def handle_summary(rss: Rss, item: Dict[str, Any], tmp: str) -> str:
     """
     id = re.split(r"/", item["link"])[-1]  # 动态ID
     file_name = f"twitter_status_{id}.png"  # 文件名
-    # path1 = os.path.dirname(
-    #     os.path.dirname(__file__))  # 当前脚本的运行目录"bot.py所在目录\src\plugins\ELF_RSS2\parsing"
-    # abs_path = os.path.join(path1, "cache", file_name)  # 保存的图片绝对路径
     abs_path = CACHE_PATH / f"{file_name}"
     if not os.path.exists(abs_path):
         # 如果截图文件不存在，则使用浏览器截图
         _ = await get_screen_image(id, file_name)
     if os.path.exists(abs_path):
-        image_msg = fr"[CQ:image,file=file:///{abs_path},subType=0,url=]"
-        re_str = item['summary']
-        tmp = tmp.replace(re_str, image_msg)
-        return tmp
+        # base64形式上传
+        with open(abs_path, 'rb') as f:
+            image_data = f.read()
+        if img_base64 := get_pic_base64(image_data):
+            image_msg = fr"[CQ:image,file=base64://{img_base64},subType=0,url=]"
+            os.remove(abs_path)  # 将截图删除
+            # 定义正则表达式模式，使用非贪婪匹配来匹配所有可能的翻译之前的所有文字
+            pattern = r".*?(?=(谷歌翻译|Deepl翻译|百度翻译))"
+            if re.search(pattern,tmp):
+                # 使用re.sub()进行正则替换
+                tmp = re.sub(pattern, image_msg + "\n", tmp, count=1,flags=re.DOTALL)
+            else:
+                tmp = image_msg
+            return tmp
+        # 文件形式上传
+        # image_msg = fr"[CQ:image,file=file:///{abs_path},subType=0,url=]"
     else:
         # 如果文件不存在，发送文字消息
         return tmp

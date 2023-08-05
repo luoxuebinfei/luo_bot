@@ -119,6 +119,11 @@ async def zip_pic(url: str, content: bytes) -> Union[Image.Image, bytes, None]:
 
 # 将图片转化为 base64
 def get_pic_base64(content: Union[Image.Image, bytes, None]) -> str:
+    """
+    将输入的图片数据转换为Base64编码字符串并返回
+    :param content:可以是Image.Image（PIL库中的图像对象）、bytes（二进制图片数据）、或者None（空值）
+    :return:
+    """
     if not content:
         return ""
     if isinstance(content, Image.Image):
