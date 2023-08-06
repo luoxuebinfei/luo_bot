@@ -17,6 +17,7 @@ from ..handle_images import (
 from ..utils import get_summary
 from ...config import CACHE_PATH
 from ..handle_images import get_pic_base64
+from ..screen import twitter_screen
 
 
 # 处理图片
@@ -70,21 +71,31 @@ async def handle_img(item: Dict[str, Any], img_proxy: bool, img_num: int) -> str
     return img_str
 
 
-async def get_screen_image(param, file_name):
+# async def get_screen_image(param, file_name):
+#     """
+#     启用无头浏览器puppeteer打开网页进行截图
+#     :param param: 动态ID
+#     :param file_name: 保存的文件名
+#     :return:
+#     """
+#     path = os.path.join(os.path.dirname(
+#         os.path.dirname(__file__)), "js", "twitter-puppeteer.js")
+#     # save_path = os.path.join(os.path.dirname(
+#     #     os.path.dirname(__file__)), "cache", f"{file_name}")
+#     save_path = CACHE_PATH / f"{file_name}"
+#     process = await asyncio.create_subprocess_exec("node", path, param, save_path, stdout=asyncio.subprocess.PIPE,
+#                                                    stderr=asyncio.subprocess.PIPE, )
+#     _, _ = await process.communicate()
+#     return
+
+async def get_screen_image(dt_id, save_path):
     """
-    启用无头浏览器puppeteer打开网页进行截图
-    :param param: 动态ID
-    :param file_name: 保存的文件名
-    :return:
+    获取屏幕截图
+    :param dt_id:动态ID
+    :param save_path:保存路径
+    :return: base64
     """
-    path = os.path.join(os.path.dirname(
-        os.path.dirname(__file__)), "js", "twitter-puppeteer.js")
-    # save_path = os.path.join(os.path.dirname(
-    #     os.path.dirname(__file__)), "cache", f"{file_name}")
-    save_path = CACHE_PATH / f"{file_name}"
-    process = await asyncio.create_subprocess_exec("node", path, param, save_path, stdout=asyncio.subprocess.PIPE,
-                                                   stderr=asyncio.subprocess.PIPE, )
-    _, _ = await process.communicate()
+    await twitter_screen(dt_id, save_path)
     return
 
 
@@ -97,19 +108,19 @@ async def handle_summary(rss: Rss, item: Dict[str, Any], tmp: str) -> str:
     :param tmp: 正文
     :return: 操作后的正文
     """
-    id = re.split(r"/", item["link"])[-1]  # 动态ID
-    file_name = f"twitter_status_{id}.png"  # 文件名
-    abs_path = CACHE_PATH / f"{file_name}"
-    if not os.path.exists(abs_path):
+    dt_id = re.split(r"/", item["link"])[-1]  # 动态ID
+    file_name = f"twitter_status_{dt_id}.png"  # 文件名
+    save_path = CACHE_PATH / f"{file_name}"
+    if not os.path.exists(save_path):
         # 如果截图文件不存在，则使用浏览器截图
-        _ = await get_screen_image(id, file_name)
-    if os.path.exists(abs_path):
+        _ = await get_screen_image(dt_id, save_path)
+    if os.path.exists(save_path):
         # base64形式上传
-        with open(abs_path, 'rb') as f:
+        with open(save_path, 'rb') as f:
             image_data = f.read()
         if img_base64 := get_pic_base64(image_data):
             image_msg = fr"[CQ:image,file=base64://{img_base64},subType=0,url=]"
-            os.remove(abs_path)  # 将截图删除
+            os.remove(save_path)  # 将截图删除
             # 定义正则表达式模式，使用非贪婪匹配来匹配所有可能的翻译之前的所有文字
             pattern = r".*?(?=(谷歌翻译|Deepl翻译|百度翻译))"
             if re.search(pattern,tmp):
@@ -119,7 +130,7 @@ async def handle_summary(rss: Rss, item: Dict[str, Any], tmp: str) -> str:
                 tmp = image_msg
             return tmp
         # 文件形式上传
-        # image_msg = fr"[CQ:image,file=file:///{abs_path},subType=0,url=]"
+        # image_msg = fr"[CQ:image,file=file:///{save_path},subType=0,url=]"
     else:
         # 如果文件不存在，发送文字消息
         return tmp

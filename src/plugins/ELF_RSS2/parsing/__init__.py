@@ -225,7 +225,7 @@ async def handle_picture(rss: Rss, item: Dict[str, Any], tmp: str) -> str:
 # 处理来源
 @ParsingBase.append_handler(parsing_type="source")
 async def handle_source(item: Dict[str, Any]) -> str:
-    return f"链接：{item['link']}\n"
+    return f"\n链接：{item['link']}\n"
 
 
 # 处理种子
