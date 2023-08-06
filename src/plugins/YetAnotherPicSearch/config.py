@@ -2,6 +2,10 @@ from typing import Optional
 
 from nonebot import get_driver
 from nonebot.config import BaseConfig
+from pathlib import Path
+
+CACHE_PATH = Path.cwd() / "cache" / "picsearch_cache"   # 缓存目录
+SOUTUBOT_DATA_PATH = Path.cwd() / "data" / "YetAnotherPicSearch"
 
 
 class Config(BaseConfig):

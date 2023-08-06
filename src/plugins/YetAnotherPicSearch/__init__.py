@@ -28,10 +28,11 @@ from tenacity import AsyncRetrying, stop_after_attempt, stop_after_delay
 from .ascii2d import ascii2d_search
 from .baidu import baidu_search
 from .cache import exist_in_cache, upsert_cache
-from .config import config
+from .config import config, CACHE_PATH
 from .ehentai import ehentai_search
 from .iqdb import iqdb_search
 from .saucenao import saucenao_search
+from .soutubot import soutu_search
 from .utils import DEFAULT_HEADERS, get_bot_friend_list, handle_img, handle_reply_msg
 
 sending_lock: DefaultDict[Tuple[Union[int, str], str], asyncio.Lock] = defaultdict(
@@ -140,10 +141,18 @@ async def image_search(
                     result = await iqdb_search(url, client, hide_img)
                 elif mode == "baidu":
                     result = await baidu_search(url, client, hide_img)
-                else:
+                elif mode == "sau":
                     result = await saucenao_search(url, mode, client, hide_img)
-                    # 仅对涉及到 saucenao 的搜图结果做缓存
+                    # 对涉及到 saucenao 的搜图结果做缓存
                     upsert_cache(_cache, md5, mode, result)
+                else:
+                    # result = await saucenao_search(url, mode, client, hide_img)
+                    # 仅对涉及到 saucenao 的搜图结果做缓存
+                    # upsert_cache(_cache, md5, mode, result)
+                    result = await soutu_search(url, mode, client, hide_img, _cache, md5)
+                    # 缓存 SoutuBot 的结果
+                    upsert_cache(_cache, md5, mode, result)
+
 
 
     except Exception as e:
@@ -155,8 +164,12 @@ async def image_search(
     return result
 
 
-# 获取QQ消息中的图片链接
 async def get_universal_img_url(url: str) -> str:
+    """
+    获取QQ消息中的图片链接
+    :param url:
+    :return:
+    """
     final_url = url.replace(
         "/c2cpicdw.qpic.cn/offpic_new/", "/gchat.qpic.cn/gchatpic_new/"
     )
@@ -183,7 +196,7 @@ def get_image_urls_with_md5(event: MessageEvent) -> List[Tuple[str, str]]:
 def get_args(msg: Message) -> Tuple[str, bool, bool]:
     mode = "all"
     plain_text = msg.extract_plain_text()
-    args = ["pixiv", "danbooru", "doujin", "anime", "a2d", "ex", "iqdb", "baidu"]
+    args = ["pixiv", "danbooru", "doujin", "anime", "a2d", "ex", "iqdb", "baidu", "sau"]
     if plain_text:
         for i in args:
             if f"--{i}" in plain_text:
@@ -309,15 +322,23 @@ async def handle_image_search(bot: Bot, event: MessageEvent, matcher: Matcher) -
         if mode == "ex"
         else Network(proxies=config.proxy)
     )
-    async with network as client:
-        with Cache("picsearch_cache") as _cache:
-            for index, (url, md5) in enumerate(image_urls_with_md5):
-                await send_result_message(
-                    bot,
-                    event,
-                    await image_search(url, md5, mode, purge, not_r18, _cache, client),
-                    index if len(image_urls_with_md5) > 1 else None,
-                )
-            _cache.expire()
+    try:
+        async with network as client:
+            with Cache(CACHE_PATH.__str__()) as _cache:
+                for index, (url, md5) in enumerate(image_urls_with_md5):
+                    await send_result_message(
+                        bot,
+                        event,
+                        await image_search(url, md5, mode, purge, not_r18, _cache, client),
+                        index if len(image_urls_with_md5) > 1 else None,
+                    )
+                _cache.expire()
+    except TypeError as e:
+        logger.error(e)
+        await bot.send_msg(
+            user_id=event.user_id if isinstance(event, PrivateMessageEvent) else 0,
+            group_id=event.group_id if isinstance(event, GroupMessageEvent) else 0,
+            message="搜图结果发送失败，请稍后再试...",
+        )
     # 撤回多余消息
     await bot.delete_msg(message_id=int(msg_id["message_id"]))

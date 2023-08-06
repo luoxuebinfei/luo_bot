@@ -36,6 +36,7 @@ python-qbittorrent = "~=0.4.3"
 tinydb = "~=4.8.0"
 js2py = "*"
 playwright = "*"
+playwright-stealth = "*"
 
 [dev-packages]
 

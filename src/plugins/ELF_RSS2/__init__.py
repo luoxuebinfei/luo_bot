@@ -33,7 +33,7 @@ start_metaevent = on_metaevent(rule=check_first_connect, temp=True)
 async def start(bot: Bot) -> None:
     # 启动后检查 data 目录，不存在就创建
     if not DATA_PATH.is_dir():
-        DATA_PATH.mkdir()
+        DATA_PATH.mkdir(parents=True)
     # 启动后检查 cache 目录，不存在就创建
     if not CACHE_PATH.is_dir():
         CACHE_PATH.mkdir(parents=True)

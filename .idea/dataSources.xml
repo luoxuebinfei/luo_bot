@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
-    <data-source source="LOCAL" name="cache" uuid="c4dd2f30-8db6-4056-9268-3192fca4bc0c">
+    <data-source source="LOCAL" name="cache" uuid="14dbbeaf-329f-4406-8021-af235405a073">
       <driver-ref>sqlite.xerial</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
-      <jdbc-url>jdbc:sqlite:D:\Learn\python源码\qq_NoneBot\picsearch_cache\cache.db</jdbc-url>
+      <jdbc-url>jdbc:sqlite:D:\Learn\python源码\qq_NoneBot\cache\picsearch_cache\cache.db</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
       <libraries>
         <library>

@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "d244b3aecc2a21c74e072aaa753a736a4e5a3f9ab6b979972622776cfc145fff"
+            "sha256": "caeb576bdbd3488e33296e4b8af8cf858b9cdab1e9c9a34d930e981ac931258f"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -1012,11 +1012,11 @@
         },
         "nonebot-adapter-onebot": {
             "hashes": [
-                "sha256:e0ac165536a24f7c5e620092ab596022e8f85d462c17ec8d7a17b191093b4859",
-                "sha256:e715e05578cb58cf42adddb0bac6c060a6ea7c9b2f18e6f011786bbc2bc8d0bd"
+                "sha256:1024b503514f87d6262adf1bde6f160b3a159afc4f6c21987eece3dacb4762dd",
+                "sha256:ae9971bb77a2984d6ca097d5565132723b051dafdfd1cef954a62f45684ae62c"
             ],
             "index": "pypi",
-            "version": "==2.2.3"
+            "version": "==2.2.4"
         },
         "nonebot-plugin-guild-patch": {
             "hashes": [
@@ -1158,6 +1158,14 @@
             ],
             "index": "pypi",
             "version": "==1.36.0"
+        },
+        "playwright-stealth": {
+            "hashes": [
+                "sha256:28839cc2da803a156161799007922ccc60e839bb45c76df2a1b411471bfb1b7a",
+                "sha256:64c2eca6b62485604aa68dfc12d4b1ea2d882ab0c5b3f24ca9d50dc3d78c638f"
+            ],
+            "index": "pypi",
+            "version": "==1.0.5"
         },
         "proxy-tools": {
             "hashes": [

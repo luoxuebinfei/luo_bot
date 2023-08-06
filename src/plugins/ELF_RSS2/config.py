@@ -6,7 +6,7 @@ from nonebot.config import BaseConfig
 from nonebot.log import logger
 from pydantic import AnyHttpUrl
 
-DATA_PATH = Path.cwd() / "data"
+DATA_PATH = Path.cwd() / "data" / "ELF_RSS2"
 JSON_PATH = DATA_PATH / "rss.json"
 CACHE_PATH = Path.cwd() / "cache" / "ELF_RSS2" / "images"  # 缓存目录
 
