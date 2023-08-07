@@ -6,6 +6,7 @@ from contextlib import suppress
 from typing import DefaultDict, List, Optional, Tuple, Union
 
 import arrow
+import requests
 from aiohttp import ClientSession
 from diskcache import Cache
 from nonebot.adapters.onebot.v11 import (
@@ -333,7 +334,7 @@ async def handle_image_search(bot: Bot, event: MessageEvent, matcher: Matcher) -
                         index if len(image_urls_with_md5) > 1 else None,
                     )
                 _cache.expire()
-    except TypeError as e:
+    except (TypeError, requests.exceptions.ConnectionError) as e:
         logger.error(e)
         await bot.send_msg(
             user_id=event.user_id if isinstance(event, PrivateMessageEvent) else 0,
