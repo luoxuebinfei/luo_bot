@@ -56,11 +56,81 @@
 
 3. 安装 `playwright` 无头浏览器
 
-    ```playwright install chromium```
+    ```playwright install firefox```
 
 4. 运行
 
     ```python bot.py```
+
+# 插件配置
+
+编辑根目录下的 `.env` 文件，可根据实际使用需求修改相关配置
+
+<details>
+  <summary>示例</summary>
+
+```
+ENVIRONMENT=dev
+DRIVER=~fastapi
+HOST=127.0.0.1  # go-cqhttp监听地址
+PORT=8080   # go-cqhttp监听端口
+
+COMMAND_START=["/"]  # 配置命令起始字符
+COMMAND_SEP=["."]  # 配置命令分割字符
+
+# 插件 YetAnotherPicSearch 的配置
+PROXY=""   # 代理地址
+# saucenao APIKEY，必填，否则无法使用 saucenao 搜图
+SAUCENAO_API_KEY=""
+# 对 saucenao 的搜索结果进行 NSFW 判断的严格程度(依次递增), 启用后自动隐藏相应的 NSFW 结果的缩略图
+# 0 表示不判断， 1 只判断明确的， 2 包括可疑的， 3 非明确为 SFW 的
+SAUCENAO_NSFW_HIDE_LEVEL=1
+# exhentai cookies，选填，没有的情况下自动改用 e-hentai 搜图
+EXHENTAI_COOKIES=""
+
+# 插件 XianbaoPush 的配置
+XIANBAO_OPEN=False  # 是否开启推送
+XIANBAO_GROUP_ID=[] # 要推送的群,多个群以英文逗号分割
+
+# 插件 ELF_RSS2 的配置
+RSS_PROXY=""  # 代理地址 示例： "127.0.0.1:7890"
+RSSHUB=""  # rsshub订阅地址
+#RSSHUB_BACKUP=[]  # 备用rsshub地址 示例： ["https://rsshub.app","https://rsshub.app"] 务必使用双引号！！！
+DB_CACHE_EXPIRE=30  # 去重数据库的记录清理限定天数
+LIMIT=200  # 缓存rss条数
+MAX_LENGTH=1024  # 正文长度限制，防止消息太长刷屏，以及消息过长发送失败的情况
+ENABLE_BOOT_MESSAGE=false  # 是否启用启动时的提示消息推送
+
+# 图片压缩
+ZIP_SIZE=2048  # 非 GIF 图片压缩后的最大长宽值，单位 px
+GIF_ZIP_SIZE=6144  # GIF 图片压缩临界值，单位 KB
+IMG_FORMAT="{subs}/{name}{ext}" # 保存图片的文件名,可使用 {subs}:订阅名 {name}:文件名 {ext}:文件后缀(可省略)
+IMG_DOWN_PATH=""  # 图片的下载路径,默认为./data/image 可以为相对路径(./test)或绝对路径(/home)
+
+BLOCKQUOTE=true  # 是否显示转发的内容(主要是微博)，默认打开，如果关闭还有转发的信息的话，可以自行添加进屏蔽词(但是这整条消息就会没)
+#BLACK_WORD=[]  # 屏蔽词填写 支持正则，如 ["互动抽奖","微博抽奖平台"] 务必使用双引号！！！
+
+# 使用百度翻译API 可选，填的话两个都要填，不填默认使用谷歌翻译(需墙外？)
+# 百度翻译接口appid和secretKey，前往http://api.fanyi.baidu.com/获取
+# 一般来说申请标准版免费就够了，想要好一点可以认证上高级版，有月限额，rss用也足够了
+#BAIDU_ID=""
+#BAIDU_KEY=""
+
+# qbittorrent 相关设置(文件下载位置等更多设置请在qbittorrent软件中设置)
+#QB_USERNAME=""  # qbittorrent 用户名
+#QB_PASSWORD=""  # qbittorrent 密码
+#QB_WEB_URL="http://127.0.0.1:8081"  # qbittorrent 客户端默认是关闭状态，请打开并设置端口号为 8081，同时勾选 “对本地主机上的客户端跳过身份验证”
+#QB_DOWN_PATH=""  # qb的文件下载地址，这个地址必须是 go-cqhttp能访问到的
+#DOWN_STATUS_MSG_GROUP=[]  # 下载进度消息提示群组 示例 [12345678] 注意：最好是将该群设置为免打扰
+#DOWN_STATUS_MSG_DATE=10  # 下载进度检查及提示间隔时间，秒，不建议小于 10s
+
+# pikpak 相关设置
+#PIKPAK_USERNAME=""  # pikpak 用户名
+#PIKPAK_PASSWORD=""  # pikpak 密码
+#PIKPAK_DOWNLOAD_PATH=""  # pikpak 离线保存的目录, 默认是根目录，示例: ELF_RSS/Downloads ,目录不存在会自动创建, 不能/结尾
+
+```
+</details>
 
 # 指令
 
@@ -288,3 +358,14 @@
     ```npx extract-stealth-evasions```
 
     也可以在 [stealth.min.js](https://gitcode.net/mirrors/requireCool/stealth.min.js?utm_source=csdn_github_accelerator) 中进行下载
+
+
+# 缓存文件所在位置
+
+1. `playwright` 下载的浏览器位置
+
+    `%USERPROFILE%\AppData\Local\ms-playwright` 在 Windows 上
+
+    `~/Library/Caches/ms-playwright` 在 MacOS 上
+
+    `~/.cache/ms-playwright` 在Linux上

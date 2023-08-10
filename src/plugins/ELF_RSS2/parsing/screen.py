@@ -1,6 +1,8 @@
 import base64
 
 from playwright.async_api import async_playwright
+from playwright._impl._api_types import TimeoutError
+from nonebot.log import logger
 
 
 async def bili_screen(dt_id, save_path):
@@ -11,7 +13,7 @@ async def bili_screen(dt_id, save_path):
     :return: base64
     """
     async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True)
+        browser = await p.firefox.launch(headless=True)
         context = await browser.new_context(
             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
                        "Chrome/115.0.0.0 Safari/537.36",
@@ -26,6 +28,10 @@ async def bili_screen(dt_id, save_path):
         await p.evaluate("node=>node.remove()")
         p = await page.wait_for_selector("xpath=//*[@class='login-tip']")
         await p.evaluate("node=>node.remove()")
+        try:
+            await page.wait_for_load_state("networkidle", timeout=5000)
+        except TimeoutError as e:
+            logger.warning(e)
         screenshot_bytes = await page.locator("#app > div.content > div > div > div.bili-dyn-item__main").screenshot(
             path=f'{save_path}')
         await context.close()
@@ -41,7 +47,7 @@ async def twitter_screen(dt_id, save_path):
     :return: base64
     """
     async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True)
+        browser = await p.firefox.launch(headless=True)
         context = await browser.new_context(
             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
                        "Chrome/115.0.0.0 Safari/537.36",
@@ -57,6 +63,10 @@ async def twitter_screen(dt_id, save_path):
         await p.evaluate("node=>node.style.display='none'")
         p = await page.wait_for_selector("//*[@id=\"layers\"]/div")
         await p.evaluate("node=>node.style.display='none'")
+        try:
+            await page.wait_for_load_state("networkidle", timeout=5000)
+        except TimeoutError as e:
+            logger.warning(e)
         screenshot_bytes = await page.get_by_test_id('tweet').screenshot(path=f'{save_path}')
         await context.close()
         await browser.close()

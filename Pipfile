@@ -37,6 +37,7 @@ tinydb = "~=4.8.0"
 js2py = "*"
 playwright = "*"
 playwright-stealth = "*"
+httpx = "*"
 
 [dev-packages]
 
