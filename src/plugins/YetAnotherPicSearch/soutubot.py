@@ -1,5 +1,6 @@
 import asyncio
 import json
+from nonebot.log import logger
 import os
 import re
 import sys
@@ -7,16 +8,19 @@ import time
 import urllib
 import http.cookiejar
 import io
-from typing import List
+from typing import List, Any, Coroutine
 
 import execjs
 import requests
 from aiohttp import ClientSession
 from diskcache import Cache
+from requests.adapters import HTTPAdapter
 from requests_toolbelt import MultipartEncoder
 import webview
 import cloudscraper
 from pathlib import Path
+
+from urllib3 import Retry
 
 from . import saucenao_search
 from .utils import handle_img
@@ -25,33 +29,32 @@ from .cache import upsert_cache
 
 scraper = cloudscraper.create_scraper()  # returns a CloudScraper instance
 
-
-def read_cookies(window):
-    """获取cookie以解决机器人验证"""
-    time.sleep(10)
-    match = re.search(r"cf_clearance=([^;]+)", str(window.get_cookies()[0]))
-    if match:
-        # 提取匹配到的内容
-        cf_clearance_value = match.group(1)
-        cookies["cf_clearance"] = cf_clearance_value
-        data["cf_clearance"] = cookies["cf_clearance"]
-
-        window.destroy()  # 关闭窗口
+# def read_cookies(window):
+#     """获取cookie以解决机器人验证"""
+#     time.sleep(10)
+#     match = re.search(r"cf_clearance=([^;]+)", str(window.get_cookies()[0]))
+#     if match:
+#         # 提取匹配到的内容
+#         cf_clearance_value = match.group(1)
+#         cookies["cf_clearance"] = cf_clearance_value
+#         data["cf_clearance"] = cookies["cf_clearance"]
+#
+#         window.destroy()  # 关闭窗口
 
 
 hide_num = 0
 
 
-def js(window):
-    window.hide()
-    # global hide_num
-    # hide_num += 1
-    # if hide_num > 3:
-    #     window.show()
-    """获取ua"""
-    headers["user-agent"] = window.evaluate_js("navigator.userAgent")
-    data["user-agent"] = headers["user-agent"]
-    read_cookies(window)
+# def js(window):
+#     window.hide()
+#     # global hide_num
+#     # hide_num += 1
+#     # if hide_num > 3:
+#     #     window.show()
+#     """获取ua"""
+#     headers["user-agent"] = window.evaluate_js("navigator.userAgent")
+#     data["user-agent"] = headers["user-agent"]
+#     read_cookies(window)
 
 
 def get_api_key():
@@ -67,24 +70,51 @@ def get_api_key():
 
 data_path = SOUTUBOT_DATA_PATH / "soutubot.json"
 
-# 检测文件是否存在
-if not SOUTUBOT_DATA_PATH.exists():
-    SOUTUBOT_DATA_PATH.mkdir(parents=True)
-if not data_path.exists():
-    with open(data_path.__str__(), "w+", encoding="utf-8") as f:
-        f.write(json.dumps({
-            "user-agent": "",
-            "cf_clearance": ""
-        }))
 
-with open(data_path.__str__(), "r", encoding="utf-8") as f:
-    try:
-        data = json.loads(f.read())
-    except json.decoder.JSONDecodeError as e:
-        data = {
-            "user-agent": "",
-            "cf_clearance": ""
-        }
+async def initialization():
+    """
+    初始化文件，检查文件是否存在，不存在则创建
+    :return:
+    """
+    # 检测文件是否存在
+    if not SOUTUBOT_DATA_PATH.exists():
+        SOUTUBOT_DATA_PATH.mkdir(parents=True)
+    if not data_path.exists():
+        with open(data_path.__str__(), "w+", encoding="utf-8") as f:
+            f.write(json.dumps({
+                "user-agent": "",
+                "cookies": {}
+            }))
+            f.close()
+
+
+async def read_from_file():
+    """
+    从文件中读取ua和cookies
+    :return:
+    """
+    with open(data_path.__str__(), "r", encoding="utf-8") as f:
+        try:
+            data = json.loads(f.read())
+        except json.decoder.JSONDecodeError as e:
+            data = {
+                "user-agent": "",
+                "cookies": {}
+            }
+        f.close()
+    return data
+
+
+async def write_to_file(data: Coroutine[Any, Any, dict]):
+    """
+    写入文件
+    :param data:
+    :return:
+    """
+    with open(data_path.__str__(), "w+", encoding="utf-8") as f:
+        f.write(json.dumps(data))
+        f.close()
+
 
 headers = {
     "authority": "soutubot.moe",
@@ -100,21 +130,18 @@ headers = {
     "sec-fetch-dest": "empty",
     "sec-fetch-mode": "cors",
     "sec-fetch-site": "same-origin",
-    "user-agent": data["user-agent"],
-    "x-api-key": get_api_key(),
+    "user-agent": "",
+    "x-api-key": "",
     "x-requested-with": "XMLHttpRequest",
 }
-cookies = {
-    "cf_clearance": data["cf_clearance"]
-}
-soutu_url = "https://soutubot.moe/api/search"
 
-# 重试次数
-retry_num = 0
+soutu_url = "https://soutubot.moe/api/search"
 
 
 async def soutu_search(url: str, mode: str, client: ClientSession, hide_img: bool, _cache: Cache, md5: str) -> List[
     str]:
+    await initialization()
+    # 获取图片
     res = requests.get(url)
     f = io.BytesIO(res.content)
     files = {
@@ -125,17 +152,16 @@ async def soutu_search(url: str, mode: str, client: ClientSession, hide_img: boo
         'factor': '1.2'
     }
     form_data = MultipartEncoder(files, boundary="----WebKitFormBoundaryQMMmxCYA7HY7JFLw")
-    headers["x-api-key"] = get_api_key()
-    global retry_num
-    if retry_num <= 5:
-        response = scraper.post(soutu_url, headers=headers, data=form_data, cookies=cookies)
-        retry_num += 1
-        # 将 data 写入文件中
-        with open(data_path.__str__(), "w", encoding="utf-8") as f:
-            f.write(json.dumps(data))
+    retry_num = 0  # 重试次数
+    final_res = []
+    while retry_num <= 3:
+        data: Coroutine[Any, Any, dict] = await read_from_file()
+        headers["user-agent"] = data["user-agent"]
+        cookies = data["cookies"]
+        headers["x-api-key"] = get_api_key()
         try:
+            response = requests.post(soutu_url, headers=headers, data=form_data, cookies=cookies, timeout=5)
             json_res = json.loads(response.text)
-            final_res = []
             for i in json_res["data"][:3]:
                 # 如果匹配度超过80
                 thumbnail = await handle_img(i["previewImageUrl"], hide_img)  # 缩略图
@@ -167,8 +193,30 @@ async def soutu_search(url: str, mode: str, client: ClientSession, hide_img: boo
             return final_res
         except json.decoder.JSONDecodeError:
             """遇到机器人验证"""
-            window = webview.create_window(title="验证", url="https://soutubot.moe")
-            webview.start(js, window, private_mode=False)
-            await soutu_search(url, mode, client, hide_img, _cache, md5)
-    else:
-        return ["soutubot 暂时无法使用"]
+            # window = webview.create_window(title="验证", url="https://soutubot.moe")
+            # webview.start(js, window, private_mode=False)
+            # 使用 FlareSolverr 解决验证
+            payload = json.dumps(
+                {
+                    "cmd": "request.get",
+                    "url": "https://soutubot.moe/",
+                    "maxTimeout": 60000
+                }
+            )
+            headers_ = {
+                "Content-Type": "application/json",
+                "content-type": "application/json"
+            }
+            res = requests.post("http://127.0.0.1:8191/v1", data=payload, headers=headers_)
+            res = json.loads(res.text)
+            ck: list[dict] = res["solution"]["cookies"]
+            for i in ck:
+                cookies[i["name"]] = i["value"]
+            data["user-agent"] = res["solution"]["userAgent"]
+            await write_to_file(data)
+        except requests.exceptions.ProxyError as e:
+            logger.error(e)
+        finally:
+            retry_num += 1
+
+    return ["soutubot 暂时无法使用"]

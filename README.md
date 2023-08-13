@@ -46,21 +46,35 @@
 
 2. 进入源码目录打开 `cmd`
 
-    创建虚拟环境
+   创建虚拟环境
 
-    ```pipenv shell```
+   ```pipenv shell```
 
-    安装依赖
+   安装依赖
 
-    ```pipenv install```
+   ```pipenv install```
+
+   进入虚拟环境中安装 `nb-cli`
+
+   ```pipenv install nb-cli```
+
+   安装 nb 插件(根据 `pyproject.toml` 文件中的插件列表进行安装)
+
+    ```
+   nb plugin install nonebot-plugin-apscheduler
+   nb plugin install nonebot-plugin-gocqhttp
+   nb plugin install nonebot-plugin-reboot
+   ```
 
 3. 安装 `playwright` 无头浏览器
 
-    ```playwright install firefox```
+   ```playwright install firefox```
 
-4. 运行
+4. 下载 [FlareSolverr](https://github.com/FlareSolverr/FlareSolverr) 解压运行
 
-    ```python bot.py```
+5. 运行
+
+   ```python bot.py```
 
 # 插件配置
 

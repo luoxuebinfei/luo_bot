@@ -23,12 +23,12 @@ async def bili_screen(dt_id, save_path):
         js = "Object.defineProperties(navigator, {webdriver:{get:()=>undefined}});"
         await page.add_init_script(js)
         await page.goto(f'https://t.bilibili.com/{dt_id}')
-        await page.mouse.wheel(100, 100)
-        p = await page.wait_for_selector("xpath=//*[@id=\"internationalHeader\"]/div")
-        await p.evaluate("node=>node.remove()")
-        p = await page.wait_for_selector("xpath=//*[@class='login-tip']")
-        await p.evaluate("node=>node.remove()")
         try:
+            await page.locator("//*[@id=\"internationalHeader\"]/div").evaluate_all(
+                "nodes=>nodes.forEach((node)=>node.remove())")
+            await page.locator('//*[@class="unlogin-popover unlogin-popover-avatar"]').evaluate_all(
+                "nodes=>nodes.forEach((node)=>node.remove())")
+            await page.locator("//*[@class='login-tip']").evaluate_all("nodes=>nodes.forEach((node)=>node.remove())")
             await page.wait_for_load_state("networkidle", timeout=5000)
         except TimeoutError as e:
             logger.warning(e)
@@ -57,13 +57,13 @@ async def twitter_screen(dt_id, save_path):
         js = "Object.defineProperties(navigator, {webdriver:{get:()=>undefined}});"
         await page.add_init_script(js)
         await page.goto(f'https://twitter.com/fujimatakuya/status/{dt_id}')
-        p = await page.wait_for_selector(
-            "//*[@id=\"react-root\"]/div/div/div[2]/main/div/div/div/div[1]/div/div[1]/div["
-            "1]/div/div/div/div")
-        await p.evaluate("node=>node.style.display='none'")
-        p = await page.wait_for_selector("//*[@id=\"layers\"]/div")
-        await p.evaluate("node=>node.style.display='none'")
         try:
+            p = await page.wait_for_selector(
+                "//*[@id=\"react-root\"]/div/div/div[2]/main/div/div/div/div[1]/div/div[1]/div["
+                "1]/div/div/div/div")
+            await p.evaluate("node=>node.style.display='none'")
+            p = await page.wait_for_selector("//*[@id=\"layers\"]/div")
+            await p.evaluate("node=>node.style.display='none'")
             await page.wait_for_load_state("networkidle", timeout=5000)
         except TimeoutError as e:
             logger.warning(e)
