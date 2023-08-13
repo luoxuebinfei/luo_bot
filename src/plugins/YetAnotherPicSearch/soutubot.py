@@ -1,5 +1,7 @@
 import asyncio
 import json
+
+import httpx
 from nonebot.log import logger
 import os
 import re
@@ -143,15 +145,13 @@ async def soutu_search(url: str, mode: str, client: ClientSession, hide_img: boo
     await initialization()
     # 获取图片
     res = requests.get(url)
-    f = io.BytesIO(res.content)
-    files = {
-        'filename': "image",
-        'Content-Disposition': 'form-data;',
-        'Content-Type': 'form-data',
-        'file': ('image', f, 'image/jpeg'),
-        'factor': '1.2'
+    img_bytes = res.content
+    d = {
+        'factor': '1.2',
     }
-    form_data = MultipartEncoder(files, boundary="----WebKitFormBoundaryQMMmxCYA7HY7JFLw")
+    file = {
+        'file': ('image', img_bytes, 'image/jpeg'),
+    }
     retry_num = 0  # 重试次数
     final_res = []
     while retry_num <= 3:
@@ -160,7 +160,8 @@ async def soutu_search(url: str, mode: str, client: ClientSession, hide_img: boo
         cookies = data["cookies"]
         headers["x-api-key"] = get_api_key()
         try:
-            response = requests.post(soutu_url, headers=headers, data=form_data, cookies=cookies, timeout=5)
+            async with httpx.AsyncClient() as client:
+                response = await client.post(soutu_url, headers=headers, data=d, files=file, cookies=cookies)
             json_res = json.loads(response.text)
             for i in json_res["data"][:3]:
                 # 如果匹配度超过80
