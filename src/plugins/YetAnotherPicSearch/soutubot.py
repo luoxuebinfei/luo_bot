@@ -1,29 +1,18 @@
-import asyncio
 import json
 
 import httpx
 from nonebot.log import logger
-import os
-import re
-import sys
-import time
-import urllib
-import http.cookiejar
-import io
 from typing import List, Any, Coroutine
 
 import execjs
 import requests
 from aiohttp import ClientSession
 from diskcache import Cache
-from requests.adapters import HTTPAdapter
-from requests_toolbelt import MultipartEncoder
-import webview
+
 import cloudscraper
 from pathlib import Path
 
-from urllib3 import Retry
-
+from .config import config
 from . import saucenao_search
 from .utils import handle_img
 from .config import SOUTUBOT_DATA_PATH
@@ -160,8 +149,12 @@ async def soutu_search(url: str, mode: str, client: ClientSession, hide_img: boo
         cookies = data["cookies"]
         headers["x-api-key"] = get_api_key()
         try:
-            async with httpx.AsyncClient() as client:
-                response = await client.post(soutu_url, headers=headers, data=d, files=file, cookies=cookies)
+            proxies = {
+                "http://": config.proxy,
+                "https://": config.proxy,
+            }
+            async with httpx.AsyncClient(proxies=proxies) as c:
+                response = await c.post(soutu_url, headers=headers, data=d, files=file, cookies=cookies)
             json_res = json.loads(response.text)
             for i in json_res["data"][:3]:
                 # 如果匹配度超过80
@@ -220,4 +213,10 @@ async def soutu_search(url: str, mode: str, client: ClientSession, hide_img: boo
         finally:
             retry_num += 1
 
-    return ["soutubot 暂时无法使用"]
+    # 如果 soutuBot 无法使用，启用saucenao_search
+    sau_result = await saucenao_search(url, mode, client, hide_img)
+    final_res = ["soutubot 暂时无法使用\n"]
+    final_res.extend(sau_result)
+    # 缓存 saucenao 结果
+    upsert_cache(_cache, md5, mode, sau_result)
+    return final_res
