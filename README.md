@@ -3,8 +3,8 @@
 基于 NoneBOt2 和 go-cqhttp 的机器人
 
 # 项目使用的插件
-- nonebot_plugin_gocqhttp
-- nonebot_plugin_apscheduler
+- [nonebot_plugin_gocqhttp](https://github.com/mnixry/nonebot-plugin-gocqhttp)
+- [nonebot_plugin_apscheduler](https://github.com/nonebot/plugin-apscheduler)
 - [nonebot-plugin-reboot](https://github.com/18870/nonebot-plugin-reboot)
 
 ## 二次修改的插件
@@ -78,7 +78,9 @@
 
 # 插件配置
 
-编辑根目录下的 `.env` 文件，可根据实际使用需求修改相关配置
+编辑根目录下的 `.env.*` 文件，可根据实际使用需求修改相关配置
+
+(如不存在，可以自行创建 `.env` -> `.env.dev` -> `.env.prod` 后面文件中相同的设置会覆盖前面文件的设置)
 
 <details>
   <summary>示例</summary>
@@ -101,6 +103,8 @@ SAUCENAO_API_KEY=""
 SAUCENAO_NSFW_HIDE_LEVEL=1
 # exhentai cookies，选填，没有的情况下自动改用 e-hentai 搜图
 EXHENTAI_COOKIES=""
+#NSFW_IMG=True   # 对可能出现的 nsfw 预览图片全部打码，默认为 False
+#HIDE_IMG=False  # 隐藏所有搜索结果的缩略图，默认为 False
 
 # 插件 XianbaoPush 的配置
 XIANBAO_OPEN=False  # 是否开启推送
@@ -362,17 +366,22 @@ BLOCKQUOTE=true  # 是否显示转发的内容(主要是微博)，默认打开�
 
 - 发送 `搜图关键词` 并附上搜索范围或者功能参数，如果没有指定，会使用默认设置 (即 `--all`)
 - 此时你发出来的下一条消息中的图 (也就是一次性的) 会使用指定搜索范围或者使用某项功能
+
 </details>
 
+# 其他需要开启的服务
+
+- [FlareSolverr](https://github.com/FlareSolverr/FlareSolverr) 用于解决 Cloudflare 的机器人验证，其默认端口 `8191` 不能更改
+- [RSSHub](https://docs.rsshub.app/install/) 用于自建 RSS 订阅，如不需要则不用开启（`.env.*` 文件中 `RSSHUB` 一项）
 
 # 一些文件生成
 
 1. 用于伪装无头浏览器的`stealth.min.js`文件
 
-    ```npx extract-stealth-evasions```
+   ```npx extract-stealth-evasions```
 
-    也可以在 [stealth.min.js](https://gitcode.net/mirrors/requireCool/stealth.min.js?utm_source=csdn_github_accelerator) 中进行下载
-
+   也可以在 [stealth.min.js](https://gitcode.net/mirrors/requireCool/stealth.min.js?utm_source=csdn_github_accelerator)
+   中进行下载
 
 # 缓存文件所在位置
 

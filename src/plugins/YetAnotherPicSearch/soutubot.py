@@ -143,7 +143,7 @@ async def soutu_search(url: str, mode: str, client: ClientSession, hide_img: boo
     }
     retry_num = 0  # 重试次数
     final_res = []
-    while retry_num <= 3:
+    while retry_num <= 5:
         data: Coroutine[Any, Any, dict] = await read_from_file()
         headers["user-agent"] = data["user-agent"]
         cookies = data["cookies"]
@@ -190,6 +190,7 @@ async def soutu_search(url: str, mode: str, client: ClientSession, hide_img: boo
             # window = webview.create_window(title="验证", url="https://soutubot.moe")
             # webview.start(js, window, private_mode=False)
             # 使用 FlareSolverr 解决验证
+            logger.info("【SoutuBot】遇到机器人验证，正在使用 FlareSolverr 解决验证...")
             payload = json.dumps(
                 {
                     "cmd": "request.get",
@@ -208,8 +209,9 @@ async def soutu_search(url: str, mode: str, client: ClientSession, hide_img: boo
                 cookies[i["name"]] = i["value"]
             data["user-agent"] = res["solution"]["userAgent"]
             await write_to_file(data)
-        except requests.exceptions.ProxyError as e:
-            logger.error(e)
+        except (requests.exceptions.ProxyError, KeyError, httpx.ReadTimeout) as e:
+            msg = "【SoutuBot】" + e
+            logger.error(msg)
         finally:
             retry_num += 1
 

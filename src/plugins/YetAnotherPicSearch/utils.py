@@ -2,8 +2,10 @@ import functools
 import re
 from base64 import b64encode
 from contextlib import suppress
+from io import BytesIO
 from typing import List, Optional
 
+from PIL import Image
 from aiohttp import ClientSession
 from cachetools import TTLCache
 from cachetools.keys import hashkey
@@ -19,7 +21,7 @@ DEFAULT_HEADERS = {
 
 
 async def get_image_bytes_by_url(
-    url: str, cookies: Optional[str] = None
+        url: str, cookies: Optional[str] = None
 ) -> Optional[bytes]:
     headers = {"Cookie": cookies, **DEFAULT_HEADERS} if cookies else DEFAULT_HEADERS
     async with ClientSession(headers=headers) as session:
@@ -29,14 +31,39 @@ async def get_image_bytes_by_url(
     return None
 
 
+async def pixelated_img(bytes_img: Optional[bytes]):
+    """
+    给图片打码
+    :param bytes_img:
+    :return:
+    """
+    img = Image.open(BytesIO(bytes_img))
+    # Resize smoothly down to 64x64 pixels
+    imgSmall = img.resize((64, 64), resample=Image.Resampling.BILINEAR)
+
+    # Scale back up using NEAREST to original size
+    result = imgSmall.resize(img.size, Image.Resampling.NEAREST)
+    img_buffer = BytesIO()
+    result.save(img_buffer, format='JPEG')
+    byte_data = img_buffer.getvalue()
+    base64_str = b64encode(byte_data).decode()
+    return base64_str
+
+
 async def handle_img(
-    url: str,
-    hide_img: bool,
-    cookies: Optional[str] = None,
+        url: str,
+        hide_img: bool,
+        cookies: Optional[str] = None,
 ) -> str:
     if not hide_img:
         if image_bytes := await get_image_bytes_by_url(url, cookies):
-            return f"[CQ:image,file=base64://{b64encode(image_bytes).decode()}]"
+            if not config.nsfw_img:
+                # nsfw 功能关闭时
+                return f"[CQ:image,file=base64://{b64encode(image_bytes).decode()}]"
+            else:
+                # nsfw 功能开启时
+                pixelated_image_bytes = await pixelated_img(image_bytes)
+                return f"[CQ:image,file=base64://{pixelated_image_bytes}]"
     return f"预览图链接：{url}"
 
 

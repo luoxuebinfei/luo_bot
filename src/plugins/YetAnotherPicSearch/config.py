@@ -34,6 +34,8 @@ class Config(BaseConfig):
     saucenao_api_key: str = ""
     # exhentai cookies，选填，没有的情况下自动改用 e-hentai 搜图
     exhentai_cookies: str = ""
+    # 为防止 NSFW 图片，给所有预览图片打码
+    nsfw_img: bool = False
 
     class Config:
         extra = "allow"
