@@ -1,10 +1,12 @@
 import functools
+import json
 import re
 from base64 import b64encode
 from contextlib import suppress
 from io import BytesIO
-from typing import List, Optional
+from typing import List, Optional, Any
 
+import httpx
 from PIL import Image
 from aiohttp import ClientSession
 from cachetools import TTLCache
@@ -12,6 +14,7 @@ from cachetools.keys import hashkey
 from nonebot.adapters.onebot.v11 import Bot
 from pyquery import PyQuery
 from yarl import URL
+from nonebot.log import logger
 
 from .config import config
 
@@ -29,6 +32,38 @@ async def get_image_bytes_by_url(
             if resp.status == 200 and (image_bytes := await resp.read()):
                 return image_bytes
     return None
+
+
+async def content_moderation(url: str, cookies: Optional[str] = None) -> Optional[str]:
+    """
+    图片审核
+    :param url:图片的网址
+    :return:
+    """
+    api = "https://api.moderatecontent.com/moderate/?"
+    key = config.review_key
+    params = {
+        "key": key,
+        "url": url
+    }
+    proxies = {
+        "http://": config.proxy,
+        "https://": config.proxy,
+    }
+    headers = {"Cookie": cookies, **DEFAULT_HEADERS} if cookies else DEFAULT_HEADERS
+    async with httpx.AsyncClient(proxies=proxies, headers=headers) as c:
+        response = await c.get(api, params=params)
+    json_res = json.loads(response.text)
+    if json_res["error_code"] == 1011:
+        logger.warning("【YetAnotherPicSearch】请填入正确的图片审核API")
+        return None
+    elif json_res["error_code"] == 1001:
+        logger.warning(f"【YetAnotherPicSearch】图片审核服务获取图片失败")
+        return "Url not accessible or malformed image"
+    elif json_res["error_code"] != 0:
+        logger.warning(f"【YetAnotherPicSearch】图片审核服务出现错误，错误码：{json_res['error_code']}")
+        return None
+    return json_res["rating_label"]
 
 
 async def pixelated_img(bytes_img: Optional[bytes]):
@@ -57,13 +92,30 @@ async def handle_img(
 ) -> str:
     if not hide_img:
         if image_bytes := await get_image_bytes_by_url(url, cookies):
-            if not config.nsfw_img:
-                # nsfw 功能关闭时
-                return f"[CQ:image,file=base64://{b64encode(image_bytes).decode()}]"
+            if len(config.review_key) != 32:
+                """当审核api不存在时"""
+                if not config.nsfw_img:
+                    # nsfw 功能关闭时
+                    return f"[CQ:image,file=base64://{b64encode(image_bytes).decode()}]"
+                else:
+                    # nsfw 功能开启时
+                    pixelated_image_bytes = await pixelated_img(image_bytes)
+                    return f"[CQ:image,file=base64://{pixelated_image_bytes}]"
             else:
-                # nsfw 功能开启时
-                pixelated_image_bytes = await pixelated_img(image_bytes)
-                return f"[CQ:image,file=base64://{pixelated_image_bytes}]"
+                rating_label = await content_moderation(url, cookies)
+                if rating_label == "everyone" or rating_label == "teen" or rating_label == "Url not accessible or malformed image":
+                    return f"[CQ:image,file=base64://{b64encode(image_bytes).decode()}]"
+                elif rating_label == "adult":
+                    pixelated_image_bytes = await pixelated_img(image_bytes)
+                    return f"[CQ:image,file=base64://{pixelated_image_bytes}]"
+                else:
+                    if not config.nsfw_img:
+                        # nsfw 功能关闭时
+                        return f"[CQ:image,file=base64://{b64encode(image_bytes).decode()}]"
+                    else:
+                        # nsfw 功能开启时
+                        pixelated_image_bytes = await pixelated_img(image_bytes)
+                        return f"[CQ:image,file=base64://{pixelated_image_bytes}]"
     return f"预览图链接：{url}"
 
 

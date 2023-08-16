@@ -4,7 +4,7 @@ from nonebot import get_driver
 from nonebot.config import BaseConfig
 from pathlib import Path
 
-CACHE_PATH = Path.cwd() / "cache" / "picsearch_cache"   # 缓存目录
+CACHE_PATH = Path.cwd() / "cache" / "picsearch_cache"  # 缓存目录
 SOUTUBOT_DATA_PATH = Path.cwd() / "data" / "YetAnotherPicSearch"
 
 
@@ -36,6 +36,8 @@ class Config(BaseConfig):
     exhentai_cookies: str = ""
     # 为防止 NSFW 图片，给所有预览图片打码
     nsfw_img: bool = False
+    # 图片审核 API，到 https://moderatecontent.com/ 注册
+    review_key: str = ""
 
     class Config:
         extra = "allow"

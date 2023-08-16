@@ -105,6 +105,8 @@ SAUCENAO_NSFW_HIDE_LEVEL=1
 EXHENTAI_COOKIES=""
 #NSFW_IMG=True   # 对可能出现的 nsfw 预览图片全部打码，默认为 False
 #HIDE_IMG=False  # 隐藏所有搜索结果的缩略图，默认为 False
+# 图片审核 API，到 https://moderatecontent.com/ 注册
+REVIEW_KEY=""
 
 # 插件 XianbaoPush 的配置
 XIANBAO_OPEN=False  # 是否开启推送

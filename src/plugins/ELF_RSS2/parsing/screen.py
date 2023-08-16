@@ -28,6 +28,8 @@ async def bili_screen(dt_id, save_path):
                 "nodes=>nodes.forEach((node)=>node.remove())")
             await page.locator('//*[@class="unlogin-popover unlogin-popover-avatar"]').evaluate_all(
                 "nodes=>nodes.forEach((node)=>node.remove())")
+            await page.mouse.wheel(10000, 10000)
+            await page.wait_for_timeout(100)
             await page.locator("//*[@class='login-tip']").evaluate_all("nodes=>nodes.forEach((node)=>node.remove())")
             await page.wait_for_load_state("networkidle", timeout=5000)
         except TimeoutError as e:
