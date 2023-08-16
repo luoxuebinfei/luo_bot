@@ -110,15 +110,22 @@ async def __init__():
     with open(DATA_FILE.__str__(), "w+", encoding="utf-8") as f:
         f.write(json.dumps(status_dict, ensure_ascii=False))
     trigger = None
+    x = True
     for i, j in status_dict.items():
         if j:
-            # 制作一个整点触发器
-            trigger = CronTrigger(minute=0, hour="*", day="*", month="*")
-            # trigger = CronTrigger(second="0/5", minute="*", hour="*", day="*", month="*")
-            # trigger = IntervalTrigger(seconds=1)
+            x = True
         else:
-            # 制作一个"5分钟/次"触发器
-            trigger = CronTrigger(minute="0/5", hour="*", day="*", month="*")
+            x = False
+    if x:
+        # 制作一个整点触发器
+        trigger = CronTrigger(minute=0, hour="*", day="*", month="*")
+        # trigger = CronTrigger(second="0/5", minute="*", hour="*", day="*", month="*")
+        # trigger = IntervalTrigger(seconds=1)
+        logger.info("【Azurlane_server_status】碧蓝航线服务器状态监控定时任务添加成功！每1小时触发1次！")
+    else:
+        # 制作一个"5分钟/次"触发器
+        trigger = CronTrigger(minute="0/5", hour="*", day="*", month="*")
+        logger.info("【Azurlane_server_status】碧蓝航线服务器状态监控定时任务添加成功！每5分钟触发1次！")
     scheduler.add_job(
         func=run_job,  # 要添加任务的函数，不要带参数
         trigger=trigger,  # 触发器
@@ -138,36 +145,42 @@ async def run_job(bot: Bot):
     new_status_dict = {}
     for i in ["官服", "苹果", "渠道服"]:
         new_status_dict[i] = await get_server_status(i)
-    trigger = None
-    for i, j in new_status_dict.items():
-        if j:
+    if not old_status == new_status_dict:
+        trigger = None
+        x = True
+        for i, j in new_status_dict.items():
+            if j:
+                x = True
+            else:
+                x = False
+        if x:
             # 制作一个整点触发器
             trigger = CronTrigger(minute="0", hour="*", day="*", month="*")
+            logger.info("【Azurlane_server_status】触发器修改为每1小时触发1次！")
         else:
             # 制作一个"5分钟/次"触发器
             trigger = CronTrigger(minute="0/5", hour="*", day="*", month="*")
-    try:
-        # 修改任务
-        scheduler.reschedule_job(job_id="国服", trigger=trigger)
-    except apscheduler.jobstores.base.JobLookupError as e:
-        logger.warning(e)
-    if not old_status == new_status_dict:
+            logger.info("【Azurlane_server_status】触发器修改为每5分钟触发1次！")
+        try:
+            # 修改任务
+            scheduler.reschedule_job(job_id="国服", trigger=trigger)
+        except apscheduler.jobstores.base.JobLookupError as e:
+            logger.warning(e)
         msg = "【碧蓝航线】服务器状态\n"
         s = False
         for i, j in new_status_dict.items():
             if j:
                 msg += f"{i}开服啦！\n"
                 s = True
-            else:
-                s = False
         if s:
             for n in config.az_group:
                 await bot.send_msg(
                     group_id=n,
-                    message=f"【碧蓝航线】",
+                    message=msg,
                 )
         with open(DATA_FILE, "w+", encoding="utf-8") as f:
             f.write(json.dumps(new_status_dict, ensure_ascii=False))
+    logger.info("【Azurlane_server_status】碧蓝航线服务器状态监控运行中！")
 
 
 if __name__ == '__main__':

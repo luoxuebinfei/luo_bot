@@ -6,6 +6,7 @@ from contextlib import suppress
 from typing import DefaultDict, List, Optional, Tuple, Union
 
 import arrow
+import nonebot
 import requests
 from aiohttp import ClientSession
 from diskcache import Cache
@@ -31,6 +32,7 @@ from .baidu import baidu_search
 from .cache import exist_in_cache, upsert_cache
 from .config import config, CACHE_PATH
 from .ehentai import ehentai_search
+from .google import google_search
 from .iqdb import iqdb_search
 from .saucenao import saucenao_search
 from .soutubot import soutu_search
@@ -86,16 +88,20 @@ def to_me_with_images(bot: Bot, event: MessageEvent) -> bool:
     # 用于私聊中发送图片后立即搜图，与设置有关
     if isinstance(event, PrivateMessageEvent):
         return has_image and config.search_immediately
+    # 对搜图命令正则化
+    command_start_pattern = "|".join(re.escape(start) for start in config.command_start)  # 对命令开头进行读取拼接
+    pattern = (r'^(' + command_start_pattern + r')搜图.*')
+
     # 群里回复机器人发送的消息时，必须带上 "搜图" 才会搜图，否则会被无视
     if event.reply and event.reply.sender.user_id == int(bot.self_id):
-        return has_image and "搜图" in plain_text
+        return has_image and (re.match(pattern, plain_text) is not None)
     at_me = bool(
         [i for i in event.message if i.type == "at" and i.data["qq"] == bot.self_id]
     )
     # 此代码用于尝试解决回复图片搜图和带图片搜图重复发送的问题
     if event.reply:
         return False
-    return has_image and (event.to_me or at_me or "搜图" in plain_text)
+    return has_image and (event.to_me or at_me or (re.match(pattern, plain_text) is not None))
 
 
 IMAGE_SEARCH = on_message(rule=Rule(to_me_with_images), priority=5)
@@ -146,6 +152,8 @@ async def image_search(
                     result = await saucenao_search(url, mode, client, hide_img)
                     # 对涉及到 saucenao 的搜图结果做缓存
                     upsert_cache(_cache, md5, mode, result)
+                elif mode == "google":
+                    result = await google_search(url)
                 else:
                     # result = await saucenao_search(url, mode, client, hide_img)
                     # 仅对涉及到 saucenao 的搜图结果做缓存
@@ -197,7 +205,7 @@ def get_image_urls_with_md5(event: MessageEvent) -> List[Tuple[str, str]]:
 def get_args(msg: Message) -> Tuple[str, bool, bool]:
     mode = "all"
     plain_text = msg.extract_plain_text()
-    args = ["pixiv", "danbooru", "doujin", "anime", "a2d", "ex", "iqdb", "baidu", "sau"]
+    args = ["pixiv", "danbooru", "doujin", "anime", "a2d", "ex", "iqdb", "baidu", "sau", "google"]
     if plain_text:
         for i in args:
             if f"--{i}" in plain_text:
@@ -313,11 +321,14 @@ async def handle_image_search(bot: Bot, event: MessageEvent, matcher: Matcher) -
 
     # await bot.delete_msg(message_id=int(msg_id))
     # 发送提示消息
-    msg_id = await bot.send_msg(
-        user_id=event.user_id if isinstance(event, PrivateMessageEvent) else 0,
-        group_id=event.group_id if isinstance(event, GroupMessageEvent) else 0,
-        message="请稍等，正在搜图...",
-    )
+    try:
+        msg_id = await bot.send_msg(
+            user_id=event.user_id if isinstance(event, PrivateMessageEvent) else 0,
+            group_id=event.group_id if isinstance(event, GroupMessageEvent) else 0,
+            message="请稍等，正在搜图...",
+        )
+    except nonebot.adapters.onebot.v11.exception.ActionFailed as e:
+        logger.error(f"【YetAnotherPicSearch】{e}")
     network = (
         Network(proxies=config.proxy, cookies=config.exhentai_cookies, timeout=60)
         if mode == "ex"

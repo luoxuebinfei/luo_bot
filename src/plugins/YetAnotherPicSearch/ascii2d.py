@@ -4,6 +4,7 @@ from aiohttp import ClientSession
 from PicImageSearch import Ascii2D
 from PicImageSearch.model import Ascii2DResponse
 
+from .google import google_search
 from .config import config
 from .utils import DEFAULT_HEADERS, get_image_bytes_by_url, handle_img, shorten_url
 
@@ -56,4 +57,4 @@ async def ascii2d_search(url: str, client: ClientSession, hide_img: bool) -> Lis
             else [f"Ascii2D 色合検索結果\n搜索页面：{res.url}"] + final_res_list
         )
 
-    return await get_final_res(color_res) + await get_final_res(bovw_res, True)
+    return await get_final_res(color_res) + await get_final_res(bovw_res, True) + await google_search(url)

@@ -1,6 +1,8 @@
 # luo_Bot
 
-基于 NoneBOt2 和 go-cqhttp 的机器人
+<font size=4>基于 NoneBOt2 和 go-cqhttp 的机器人</font>
+
+<font size=5>**⚠ 本项目使用了大量的浏览器服务，因此需要一定的机器性能运行，低配置机器使用时可能出现一些错误或其他问题！！**</font>
 
 # 项目使用的插件
 - [nonebot_plugin_gocqhttp](https://github.com/mnixry/nonebot-plugin-gocqhttp)
