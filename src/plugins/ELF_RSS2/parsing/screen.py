@@ -60,12 +60,14 @@ async def twitter_screen(dt_id, save_path):
         await page.add_init_script(js)
         await page.goto(f'https://twitter.com/fujimatakuya/status/{dt_id}')
         try:
-            p = await page.wait_for_selector(
+            await page.locator(
                 "//*[@id=\"react-root\"]/div/div/div[2]/main/div/div/div/div[1]/div/div[1]/div["
-                "1]/div/div/div/div")
-            await p.evaluate("node=>node.style.display='none'")
-            p = await page.wait_for_selector("//*[@id=\"layers\"]/div")
-            await p.evaluate("node=>node.style.display='none'")
+                "1]/div/div/div/div").evaluate("node=>node.style.display='none'")
+            await page.locator("//*[@id=\"layers\"]/div").evaluate("node=>node.style.display='none'")
+            # 处理可能出现的弹窗
+            p = page.locator("xpath=/html/body/div[1]/div/div/div[1]/div[2]/div/div/div/div/div/div[2]")
+            if await p.is_visible():
+                await p.evaluate("node=>node.style.display='none'")
             await page.wait_for_load_state("networkidle", timeout=5000)
         except TimeoutError as e:
             logger.warning(e)

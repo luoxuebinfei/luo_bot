@@ -4,6 +4,7 @@ import asyncio
 import json
 
 import apscheduler
+import nonebot
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
 from apscheduler.executors.pool import ProcessPoolExecutor, ThreadPoolExecutor
@@ -130,7 +131,7 @@ async def __init__():
         func=run_job,  # 要添加任务的函数，不要带参数
         trigger=trigger,  # 触发器
         id="国服",
-        args=(Bot,),  # 函数的参数列表，注意：只有一个值时，不能省略末尾的逗号
+        args=(),  # 函数的参数列表，注意：只有一个值时，不能省略末尾的逗号
         misfire_grace_time=30,  # 允许的误差时间，建议不要省略
         max_instances=10,  # 最大并发
         default=ThreadPoolExecutor(64),  # 最大线程
@@ -139,7 +140,7 @@ async def __init__():
     )
 
 
-async def run_job(bot: Bot):
+async def run_job():
     with open(DATA_FILE, "r+", encoding="utf-8") as f:
         old_status = json.loads(f.read())
     new_status_dict = {}
@@ -173,6 +174,7 @@ async def run_job(bot: Bot):
                 msg += f"{i}开服啦！\n"
                 s = True
         if s:
+            bot = nonebot.get_bot()
             for n in config.az_group:
                 await bot.send_msg(
                     group_id=n,
