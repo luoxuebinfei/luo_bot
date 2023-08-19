@@ -26,7 +26,7 @@ async def google_search(url: str) -> list[str]:
         result = await show_result(resp)
         if result is None:
             return ["谷歌搜图无结果", f"可尝试使用谷歌智能镜头搜图\nhttps://lens.google.com/uploadbyurl?url={url}"]
-        msg_list = ["谷歌搜图结果"] + result
+        msg_list = ["谷歌搜图结果"] + result + [f"谷歌智能镜头搜图\nhttps://lens.google.com/uploadbyurl?url={url}"]
         return msg_list
 
 
