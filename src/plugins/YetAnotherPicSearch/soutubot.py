@@ -159,15 +159,27 @@ async def soutu_search(url: str, mode: str, client: ClientSession, hide_img: boo
             for i in json_res["data"][:3]:
                 # 如果匹配度超过80
                 thumbnail = await handle_img(i["previewImageUrl"], hide_img)  # 缩略图
-                result = [
-                    f"SoutuBot（{i['similarity']}%）",
-                    f"标题：{i['title']}",
-                    thumbnail,
-                    f"语言：{i['language']}",
-                    f"详情页：{'https://www.' + i['source'] + '.net' + i['subjectPath']}",
-                    f"详细页面：{'https://www.' + i['source'] + '.net' + str(i['pagePath'])}" if i[
-                                                                                                    "pagePath"] is not None else "",
-                ]
+                if i['source'] == "nhentai":
+                    result = [
+                        f"SoutuBot（{i['similarity']}%）",
+                        f"标题：{i['title']}",
+                        thumbnail,
+                        f"语言：{i['language']}",
+                        f"详情页：{'https://www.' + i['source'] + '.net' + i['subjectPath']}",
+                        f"详细页面：{'https://www.' + i['source'] + '.net' + str(i['pagePath'])}" if i[
+                                                                                                        "pagePath"] is not None else "",
+                    ]
+                else:
+                    result = [
+                        f"SoutuBot（{i['similarity']}%）",
+                        f"标题：{i['title']}",
+                        thumbnail,
+                        f"语言：{i['language']}",
+                        f"详情页：{'https://' + 'e-hentai.org' + i['subjectPath']}\n{'https://' + 'exhentai.org' + i['subjectPath']}",
+                        f"详细页面：{'https://' + 'e-hentai.org' + str(i['pagePath'])}\n{'https://' + 'exhentai.org' + str(i['pagePath'])}" if
+                        i[
+                            "pagePath"] is not None else "",
+                    ]
                 if i["similarity"] >= 60:
                     res_list = result
                     final_res.append("\n".join([i for i in res_list if i]))
