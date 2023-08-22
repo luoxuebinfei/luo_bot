@@ -5,7 +5,7 @@ from playwright._impl._api_types import TimeoutError
 from nonebot.log import logger
 
 
-async def bili_screen(dt_id, save_path):
+async def bili_screen(dt_id) -> str | None:
     """
     bilibili的浏览器截图
     :param dt_id:动态ID
@@ -33,15 +33,21 @@ async def bili_screen(dt_id, save_path):
             await page.locator("//*[@class='login-tip']").evaluate_all("nodes=>nodes.forEach((node)=>node.remove())")
             await page.wait_for_load_state("networkidle", timeout=5000)
         except TimeoutError as e:
-            logger.warning(e)
-        screenshot_bytes = await page.locator("#app > div.content > div > div > div.bili-dyn-item__main").screenshot(
-            path=f'{save_path}')
-        await context.close()
-        await browser.close()
-        return base64.b64encode(screenshot_bytes).decode()
+            logger.warning(f"哔哩哔哩寻找元素超时：{e}")
+        try:
+            screenshot_bytes = await page.locator(
+                "#app > div.content > div > div > div.bili-dyn-item__main").screenshot()
+            await context.close()
+            await browser.close()
+            return base64.b64encode(screenshot_bytes).decode()
+        except TimeoutError as e:
+            logger.warning(f"哔哩哔哩截图超时：{e}")
+            await context.close()
+            await browser.close()
+            return None
 
 
-async def twitter_screen(dt_id, save_path):
+async def twitter_screen(dt_id) -> str | None:
     """
     推特的浏览器截图
     :param dt_id:动态ID
@@ -70,8 +76,14 @@ async def twitter_screen(dt_id, save_path):
                 await p.evaluate("node=>node.style.display='none'")
             await page.wait_for_load_state("networkidle", timeout=5000)
         except TimeoutError as e:
-            logger.warning(e)
-        screenshot_bytes = await page.get_by_test_id('tweet').screenshot(path=f'{save_path}')
-        await context.close()
-        await browser.close()
-        return base64.b64encode(screenshot_bytes).decode()
+            logger.warning(f"推特寻找元素超时：{e}")
+        try:
+            screenshot_bytes = await page.get_by_test_id('tweet').screenshot()
+            await context.close()
+            await browser.close()
+            return base64.b64encode(screenshot_bytes).decode()
+        except TimeoutError as e:
+            logger.warning(f"推特截图失败：{e}")
+            await context.close()
+            await browser.close()
+            return None

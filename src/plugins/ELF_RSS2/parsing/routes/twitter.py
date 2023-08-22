@@ -71,32 +71,13 @@ async def handle_img(item: Dict[str, Any], img_proxy: bool, img_num: int) -> str
     return img_str
 
 
-# async def get_screen_image(param, file_name):
-#     """
-#     启用无头浏览器puppeteer打开网页进行截图
-#     :param param: 动态ID
-#     :param file_name: 保存的文件名
-#     :return:
-#     """
-#     path = os.path.join(os.path.dirname(
-#         os.path.dirname(__file__)), "js", "twitter-puppeteer.js")
-#     # save_path = os.path.join(os.path.dirname(
-#     #     os.path.dirname(__file__)), "cache", f"{file_name}")
-#     save_path = CACHE_PATH / f"{file_name}"
-#     process = await asyncio.create_subprocess_exec("node", path, param, save_path, stdout=asyncio.subprocess.PIPE,
-#                                                    stderr=asyncio.subprocess.PIPE, )
-#     _, _ = await process.communicate()
-#     return
-
-async def get_screen_image(dt_id, save_path):
+async def get_screen_image(dt_id):
     """
     获取屏幕截图
     :param dt_id:动态ID
-    :param save_path:保存路径
     :return: base64
     """
-    await twitter_screen(dt_id, save_path)
-    return
+    return await twitter_screen(dt_id)
 
 
 @ParsingBase.append_handler(parsing_type="summary", rex="/twitter/user/", priority=13)
@@ -109,28 +90,15 @@ async def handle_summary(rss: Rss, item: Dict[str, Any], tmp: str) -> str:
     :return: 操作后的正文
     """
     dt_id = re.split(r"/", item["link"])[-1]  # 动态ID
-    file_name = f"twitter_status_{dt_id}.png"  # 文件名
-    save_path = CACHE_PATH / f"{file_name}"
-    if not os.path.exists(save_path):
-        # 如果截图文件不存在，则使用浏览器截图
-        _ = await get_screen_image(dt_id, save_path)
-    if os.path.exists(save_path):
-        # base64形式上传
-        with open(save_path, 'rb') as f:
-            image_data = f.read()
-        if img_base64 := get_pic_base64(image_data):
-            image_msg = fr"[CQ:image,file=base64://{img_base64},subType=0,url=]"
-            os.remove(save_path)  # 将截图删除
-            # 定义正则表达式模式，使用非贪婪匹配来匹配所有可能的翻译之前的所有文字
-            pattern = r".*?(?=(谷歌翻译|Deepl翻译|百度翻译))"
-            if re.search(pattern,tmp):
-                # 使用re.sub()进行正则替换
-                tmp = re.sub(pattern, image_msg + "\n", tmp, count=1,flags=re.DOTALL)
-            else:
-                tmp = image_msg
-            return tmp
-        # 文件形式上传
-        # image_msg = fr"[CQ:image,file=file:///{save_path},subType=0,url=]"
+    if (img_base64 := await get_screen_image(dt_id)) is not None:
+        image_msg = fr"[CQ:image,file=base64://{img_base64},subType=0,url=]"
+        # 定义正则表达式模式，使用非贪婪匹配来匹配所有可能的翻译之前的所有文字
+        pattern = r".*?(?=(谷歌翻译|Deepl翻译|百度翻译))"
+        if re.search(pattern, tmp):
+            # 使用re.sub()进行正则替换
+            tmp = re.sub(pattern, image_msg + "\n", tmp, count=1, flags=re.DOTALL)
+        else:
+            tmp = image_msg
+        return tmp
     else:
-        # 如果文件不存在，发送文字消息
         return tmp
