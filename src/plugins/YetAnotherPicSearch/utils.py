@@ -51,8 +51,12 @@ async def content_moderation(url: str, cookies: Optional[str] = None) -> Optiona
         "https://": config.proxy,
     }
     headers = {"Cookie": cookies, **DEFAULT_HEADERS} if cookies else DEFAULT_HEADERS
-    async with httpx.AsyncClient(proxies=proxies, headers=headers) as c:
-        response = await c.get(api, params=params)
+    try:
+        async with httpx.AsyncClient(proxies=proxies, headers=headers) as c:
+            response = await c.get(api, params=params)
+    except httpx.ConnectTimeout as e:
+        logger.warning(f"【YetAnotherPicSearch】图片审核服务连接超时")
+        return None
     json_res = json.loads(response.text)
     if json_res["error_code"] == 1011:
         logger.warning("【YetAnotherPicSearch】请填入正确的图片审核API")
@@ -79,7 +83,7 @@ async def pixelated_img(bytes_img: Optional[bytes]):
     # Scale back up using NEAREST to original size
     result = imgSmall.resize(img.size, Image.Resampling.NEAREST)
     img_buffer = BytesIO()
-    result.save(img_buffer, format='JPEG')
+    result.save(img_buffer, format='PNG')
     byte_data = img_buffer.getvalue()
     base64_str = b64encode(byte_data).decode()
     return base64_str

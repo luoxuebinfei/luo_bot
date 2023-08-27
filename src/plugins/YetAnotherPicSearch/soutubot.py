@@ -222,8 +222,7 @@ async def soutu_search(url: str, mode: str, client: ClientSession, hide_img: boo
             data["user-agent"] = res["solution"]["userAgent"]
             await write_to_file(data)
         except (requests.exceptions.ProxyError, KeyError, httpx.ReadTimeout) as e:
-            msg = "【SoutuBot】" + e
-            logger.error(msg)
+            logger.error(f"【SoutuBot】发生一些错误")
         finally:
             retry_num += 1
 
