@@ -215,12 +215,15 @@ async def soutu_search(url: str, mode: str, client: ClientSession, hide_img: boo
                 "content-type": "application/json"
             }
             res = requests.post("http://127.0.0.1:8191/v1", data=payload, headers=headers_)
-            res = json.loads(res.text)
-            ck: list[dict] = res["solution"]["cookies"]
-            for i in ck:
-                cookies[i["name"]] = i["value"]
-            data["user-agent"] = res["solution"]["userAgent"]
-            await write_to_file(data)
+            if res.status_code == 200:
+                res = json.loads(res.text)
+                ck: list[dict] = res["solution"]["cookies"]
+                for i in ck:
+                    cookies[i["name"]] = i["value"]
+                data["user-agent"] = res["solution"]["userAgent"]
+                await write_to_file(data)
+            else:
+                logger.error(f"【SoutuBot】 FlareSolverr 出现一些问题...")
         except (requests.exceptions.ProxyError, KeyError, httpx.ReadTimeout) as e:
             logger.error(f"【SoutuBot】发生一些错误")
         finally:
