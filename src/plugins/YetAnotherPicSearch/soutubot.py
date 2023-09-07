@@ -143,6 +143,11 @@ async def soutu_search(url: str, mode: str, client: ClientSession, hide_img: boo
     }
     retry_num = 0  # 重试次数
     final_res = []
+    # 不启用 SoutuBot 时直接返回 sau 搜索结果
+    if not config.soutubot_open:
+        sau_result = await saucenao_search(url, mode, client, hide_img)
+        final_res.extend(sau_result)
+        return final_res
     while retry_num <= 5:
         data: Coroutine[Any, Any, dict] = await read_from_file()
         headers["user-agent"] = data["user-agent"]
@@ -233,6 +238,4 @@ async def soutu_search(url: str, mode: str, client: ClientSession, hide_img: boo
     sau_result = await saucenao_search(url, mode, client, hide_img)
     final_res = ["soutubot 暂时无法使用\n"]
     final_res.extend(sau_result)
-    # 缓存 saucenao 结果
-    upsert_cache(_cache, md5, mode, sau_result)
     return final_res

@@ -38,6 +38,8 @@ class Config(BaseConfig):
     nsfw_img: bool = False
     # 图片审核 API，到 https://moderatecontent.com/ 注册
     review_key: str = ""
+    # soutu_bot 插件是否开启
+    soutubot_open: bool = False
 
     class Config:
         extra = "allow"
