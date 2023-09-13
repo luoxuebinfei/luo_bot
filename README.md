@@ -109,6 +109,8 @@ EXHENTAI_COOKIES=""
 #HIDE_IMG=False  # 隐藏所有搜索结果的缩略图，默认为 False
 # 图片审核 API，到 https://moderatecontent.com/ 注册
 REVIEW_KEY=""
+# SoutuBot 是否开启
+SOUTUBOT_OPEN=False
 
 # 插件 XianbaoPush 的配置
 XIANBAO_OPEN=False  # 是否开启推送
@@ -397,3 +399,7 @@ BLOCKQUOTE=true  # 是否显示转发的内容(主要是微博)，默认打开�
     `~/Library/Caches/ms-playwright` 在 MacOS 上
 
     `~/.cache/ms-playwright` 在Linux上
+
+# 更新日志
+
+- 2023.09.13 修复 FlareSolverr v3.3.4不能使用的问题（[#891](https://github.com/FlareSolverr/FlareSolverr/issues/891)）,更新v3.3.5版本既可解决。修复Soutubot无法使用的问题（~~力大砖飞~~）。需要更新代码和依赖（`git pull`,`pipenv install`）。

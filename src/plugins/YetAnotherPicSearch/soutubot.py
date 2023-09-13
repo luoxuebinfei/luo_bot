@@ -17,47 +17,8 @@ from . import saucenao_search
 from .utils import handle_img
 from .config import SOUTUBOT_DATA_PATH
 from .cache import upsert_cache
-
-scraper = cloudscraper.create_scraper()  # returns a CloudScraper instance
-
-# def read_cookies(window):
-#     """获取cookie以解决机器人验证"""
-#     time.sleep(10)
-#     match = re.search(r"cf_clearance=([^;]+)", str(window.get_cookies()[0]))
-#     if match:
-#         # 提取匹配到的内容
-#         cf_clearance_value = match.group(1)
-#         cookies["cf_clearance"] = cf_clearance_value
-#         data["cf_clearance"] = cookies["cf_clearance"]
-#
-#         window.destroy()  # 关闭窗口
-
-
-hide_num = 0
-
-
-# def js(window):
-#     window.hide()
-#     # global hide_num
-#     # hide_num += 1
-#     # if hide_num > 3:
-#     #     window.show()
-#     """获取ua"""
-#     headers["user-agent"] = window.evaluate_js("navigator.userAgent")
-#     data["user-agent"] = headers["user-agent"]
-#     read_cookies(window)
-
-
-def get_api_key():
-    node = execjs.get()
-    with open(str(Path(__file__).parent / "Soutubot_ApiKey.js"), encoding='utf-8') as f:
-        js_code = f.read()
-    node_modules_path = Path.cwd() / "node_modules"
-    ctx = node.compile(js_code, cwd=rf'{node_modules_path.__str__()}')
-    # ctx = node.compile(js_code, cwd=r'D:\Learn\python源码\qq_NoneBot\node_modules')
-    api_key = ctx.call('run')
-    return api_key
-
+from playwright.async_api import async_playwright
+from undetected_playwright import stealth_async
 
 data_path = SOUTUBOT_DATA_PATH / "soutubot.json"
 
@@ -74,7 +35,7 @@ async def initialization():
         with open(data_path.__str__(), "w+", encoding="utf-8") as f:
             f.write(json.dumps({
                 "user-agent": "",
-                "cookies": {}
+                "cookies": []
             }))
             f.close()
 
@@ -90,13 +51,13 @@ async def read_from_file():
         except json.decoder.JSONDecodeError as e:
             data = {
                 "user-agent": "",
-                "cookies": {}
+                "cookies": []
             }
         f.close()
     return data
 
 
-async def write_to_file(data: Coroutine[Any, Any, dict]):
+async def write_to_file(data: dict):
     """
     写入文件
     :param data:
@@ -107,26 +68,79 @@ async def write_to_file(data: Coroutine[Any, Any, dict]):
         f.close()
 
 
-headers = {
-    "authority": "soutubot.moe",
-    "accept": "application/json, text/plain, */*",
-    "accept-language": "zh-CN,zh;q=0.9",
-    "content-type": "multipart/form-data; boundary=----WebKitFormBoundaryQMMmxCYA7HY7JFLw",
-    "dnt": "1",
-    "origin": "https://soutubot.moe",
-    "referer": "https://soutubot.moe/",
-    "sec-ch-ua": r"\" Not A;Brand\";v=\"99\", \"Chromium\";v=\"102\"",
-    "sec-ch-ua-mobile": "?0",
-    "sec-ch-ua-platform": "\"Windows\"",
-    "sec-fetch-dest": "empty",
-    "sec-fetch-mode": "cors",
-    "sec-fetch-site": "same-origin",
-    "user-agent": "",
-    "x-api-key": "",
-    "x-requested-with": "XMLHttpRequest",
-}
+async def cf() -> (str, str):
+    """
+    解决cloudflare验证
+    :return:
+    """
+    url = "http://127.0.0.1:8191/v1"
+    payload = {
+        "cmd": "request.get",
+        "url": "https://soutubot.moe/",
+        "maxTimeout": 60000,
+        "proxy": {"url": "http://127.0.0.1:7890"}
+    }
+    headers = {
+        "Content-Type": "application/json",
+        "content-type": "application/json"
+    }
+    response = requests.post(url, json=payload, headers=headers)
+    if response.status_code == 200:
+        cookies, useragent = response.json()["solution"]["cookies"], response.json()["solution"]["userAgent"]
+        await write_to_file({"cookies": cookies, "user-agent": useragent})
+        return cookies, useragent
+    else:
+        logger.error(f"【Soutubot】FlareSolverr 出现错误")
+        return None, None
 
-soutu_url = "https://soutubot.moe/api/search"
+
+async def get_result(image_bytes: bytes, cookies: str = None, useragent: str = None) -> dict | None:
+    """
+    获取搜图结果
+    :param useragent:
+    :param cookies:
+    :param image_bytes: 传入的图片字节
+    :return: json结果或者None
+    """
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(headless=True, args=['--disable-blink-features=AutomationControlled'])
+        if cookies is None:
+            cookies, useragent = await cf()
+            # 如果 FlareSolverr 出现错误，则退出
+            if cookies is None:
+                await browser.close()
+                return None
+        context = await browser.new_context(user_agent=useragent, locale="zh-cn")
+        await context.add_cookies(cookies)
+        await stealth_async(context)
+        page = await context.new_page()
+        # 隐藏webdriver
+        js_file_path = Path.cwd() / "src/plugins/YetAnotherPicSearch/stealth.min.js"
+        await page.add_init_script(js_file_path.__str__())
+        await page.goto("https://soutubot.moe/")
+        # 检查cookies是否过期
+        if await page.get_by_text("检查站点连接是否安全").is_visible():
+            await context.close()
+            await browser.close()
+            return await get_result(image_bytes, None, None)
+        # await page.screenshot(path=Path.cwd() / "src/plugins/YetAnotherPicSearch/1.png".__str__())
+        # 获取响应对象
+        async with page.expect_response("https://soutubot.moe/api/search") as response_info:
+            # with open(r'D:\Learn\python源码\SpiderLearn\Soutubot\1.png', 'rb') as f:
+            #     await page.set_input_files('//*[@id="app"]/div/div/div/div[1]/div[2]/div/input', files=[
+            #         {"name": "1.png", "mimeType": "image/png", "buffer": f.read()}
+            #     ], )
+            await page.set_input_files('//*[@id="app"]/div/div/div/div[1]/div[2]/div/input', files=[
+                {"name": "1.png", "mimeType": "image/png", "buffer": image_bytes}
+            ])
+        response = await response_info.value
+        result: dict = await response.json()
+        await context.close()
+        await browser.close()
+        if response.status == 200:
+            return result
+        else:
+            return None
 
 
 async def soutu_search(url: str, mode: str, client: ClientSession, hide_img: bool, _cache: Cache, md5: str) -> List[
@@ -135,104 +149,60 @@ async def soutu_search(url: str, mode: str, client: ClientSession, hide_img: boo
     # 获取图片
     res = requests.get(url)
     img_bytes = res.content
-    d = {
-        'factor': '1.2',
-    }
-    file = {
-        'file': ('image', img_bytes, 'image/jpeg'),
-    }
-    retry_num = 0  # 重试次数
     final_res = []
     # 不启用 SoutuBot 时直接返回 sau 搜索结果
     if not config.soutubot_open:
         sau_result = await saucenao_search(url, mode, client, hide_img)
         final_res.extend(sau_result)
         return final_res
-    while retry_num <= 5:
-        data: Coroutine[Any, Any, dict] = await read_from_file()
-        headers["user-agent"] = data["user-agent"]
-        cookies = data["cookies"]
-        headers["x-api-key"] = get_api_key()
-        try:
-            proxies = {
-                "http://": config.proxy,
-                "https://": config.proxy,
-            }
-            async with httpx.AsyncClient(proxies=proxies) as c:
-                response = await c.post(soutu_url, headers=headers, data=d, files=file, cookies=cookies)
-            json_res = json.loads(response.text)
-            for i in json_res["data"][:3]:
-                # 如果匹配度超过80
-                thumbnail = await handle_img(i["previewImageUrl"], hide_img)  # 缩略图
-                if i['source'] == "nhentai":
-                    result = [
-                        f"SoutuBot（{i['similarity']}%）",
-                        f"标题：{i['title']}",
-                        thumbnail,
-                        f"语言：{i['language']}",
-                        f"详情页：{'https://www.' + i['source'] + '.net' + i['subjectPath']}",
-                        f"详细页面：{'https://www.' + i['source'] + '.net' + str(i['pagePath'])}" if i[
-                                                                                                        "pagePath"] is not None else "",
-                    ]
-                else:
-                    result = [
-                        f"SoutuBot（{i['similarity']}%）",
-                        f"标题：{i['title']}",
-                        thumbnail,
-                        f"语言：{i['language']}",
-                        f"详情页：{'https://' + 'e-hentai.org' + i['subjectPath']}\n{'https://' + 'exhentai.org' + i['subjectPath']}",
-                        f"详细页面：{'https://' + 'e-hentai.org' + str(i['pagePath'])}\n{'https://' + 'exhentai.org' + str(i['pagePath'])}" if
-                        i[
-                            "pagePath"] is not None else "",
-                    ]
-                if i["similarity"] >= 60:
-                    res_list = result
-                    final_res.append("\n".join([i for i in res_list if i]))
-                    break
-                elif 40 <= i["similarity"] < 60:
-                    res_list = result
-                    final_res.append("\n".join([i for i in res_list if i]))
-                else:
-                    res_list = result
-                    final_res.append("\n".join([i for i in res_list if i]))
-                    sau_result = await saucenao_search(url, mode, client, hide_img)
-                    # 如果相似度过低，启用saucenao_search
-                    final_res.extend(sau_result)
-                    # 缓存 saucenao 结果
-                    upsert_cache(_cache, md5, mode, sau_result)
-                    break
-            return final_res
-        except json.decoder.JSONDecodeError:
-            """遇到机器人验证"""
-            # window = webview.create_window(title="验证", url="https://soutubot.moe")
-            # webview.start(js, window, private_mode=False)
-            # 使用 FlareSolverr 解决验证
-            logger.info("【SoutuBot】遇到机器人验证，正在使用 FlareSolverr 解决验证...")
-            payload = json.dumps(
-                {
-                    "cmd": "request.get",
-                    "url": "https://soutubot.moe/",
-                    "maxTimeout": 60000
-                }
-            )
-            headers_ = {
-                "Content-Type": "application/json",
-                "content-type": "application/json"
-            }
-            res = requests.post("http://127.0.0.1:8191/v1", data=payload, headers=headers_)
-            if res.status_code == 200:
-                res = json.loads(res.text)
-                ck: list[dict] = res["solution"]["cookies"]
-                for i in ck:
-                    cookies[i["name"]] = i["value"]
-                data["user-agent"] = res["solution"]["userAgent"]
-                await write_to_file(data)
+    try:
+        # 从文件中读取
+        data = await read_from_file()
+        cookies, useragent = data["cookies"], data["user-agent"]
+        json_res = await get_result(img_bytes, cookies, useragent)
+        for i in json_res["data"][:3]:
+            # 如果匹配度超过80
+            thumbnail = await handle_img(i["previewImageUrl"], hide_img)  # 缩略图
+            if i['source'] == "nhentai":
+                result = [
+                    f"SoutuBot（{i['similarity']}%）",
+                    f"标题：{i['title']}",
+                    thumbnail,
+                    f"语言：{i['language']}",
+                    f"详情页：{'https://www.' + i['source'] + '.net' + i['subjectPath']}",
+                    f"详细页面：{'https://www.' + i['source'] + '.net' + str(i['pagePath'])}" if i[
+                                                                                                    "pagePath"] is not None else "",
+                ]
             else:
-                logger.error(f"【SoutuBot】 FlareSolverr 出现一些问题...")
-        except (requests.exceptions.ProxyError, KeyError, httpx.ReadTimeout) as e:
-            logger.error(f"【SoutuBot】发生一些错误")
-        finally:
-            retry_num += 1
+                result = [
+                    f"SoutuBot（{i['similarity']}%）",
+                    f"标题：{i['title']}",
+                    thumbnail,
+                    f"语言：{i['language']}",
+                    f"详情页：{'https://' + 'e-hentai.org' + i['subjectPath']}\n{'https://' + 'exhentai.org' + i['subjectPath']}",
+                    f"详细页面：{'https://' + 'e-hentai.org' + str(i['pagePath'])}\n{'https://' + 'exhentai.org' + str(i['pagePath'])}" if
+                    i[
+                        "pagePath"] is not None else "",
+                ]
+            if i["similarity"] >= 60:
+                res_list = result
+                final_res.append("\n".join([i for i in res_list if i]))
+                break
+            elif 40 <= i["similarity"] < 60:
+                res_list = result
+                final_res.append("\n".join([i for i in res_list if i]))
+            else:
+                res_list = result
+                final_res.append("\n".join([i for i in res_list if i]))
+                sau_result = await saucenao_search(url, mode, client, hide_img)
+                # 如果相似度过低，启用saucenao_search
+                final_res.extend(sau_result)
+                # 缓存 saucenao 结果
+                upsert_cache(_cache, md5, mode, sau_result)
+                break
+        return final_res
+    except TypeError as e:
+        logger.error(f"【SoutuBot】发生错误：{e}")
 
     # 如果 soutuBot 无法使用，启用saucenao_search
     sau_result = await saucenao_search(url, mode, client, hide_img)

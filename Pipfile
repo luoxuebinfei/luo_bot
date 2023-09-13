@@ -38,6 +38,7 @@ js2py = "*"
 playwright = "*"
 playwright-stealth = "*"
 httpx = "*"
+undetected-playwright = "*"
 
 [dev-packages]
 
