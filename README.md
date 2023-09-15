@@ -153,6 +153,8 @@ BLOCKQUOTE=true  # 是否显示转发的内容(主要是微博)，默认打开�
 #PIKPAK_PASSWORD=""  # pikpak 密码
 #PIKPAK_DOWNLOAD_PATH=""  # pikpak 离线保存的目录, 默认是根目录，示例: ELF_RSS/Downloads ,目录不存在会自动创建, 不能/结尾
 
+TEXT_SELECT_CAPTCHA=True    # B站文字选择验证码开关
+
 ```
 </details>
 
@@ -381,7 +383,7 @@ BLOCKQUOTE=true  # 是否显示转发的内容(主要是微博)，默认打开�
 - [FlareSolverr](https://github.com/FlareSolverr/FlareSolverr) 用于解决 Cloudflare 的机器人验证，其默认端口 `8191` 不能更改
 - [RSSHub](https://docs.rsshub.app/install/) 用于自建 RSS 订阅，如不需要则不用开启（`.env.*` 文件中 `RSSHUB` 一项）
 
-# 一些文件生成
+# 一些文件生成或下载
 
 1. 用于伪装无头浏览器的`stealth.min.js`文件
 
@@ -389,6 +391,14 @@ BLOCKQUOTE=true  # 是否显示转发的内容(主要是微博)，默认打开�
 
    也可以在 [stealth.min.js](https://gitcode.net/mirrors/requireCool/stealth.min.js?utm_source=csdn_github_accelerator)
    中进行下载
+
+2. 用于识别B站验证码的 `Text_select_captcha.exe`
+
+    [百度网盘](https://pan.baidu.com/s/1a5cS8AIWXgjd_u-QeCpKTg?pwd=kscg)
+
+    [阿里云盘](https://www.aliyundrive.com/s/ZGXukocde1m)
+
+    下载后放入 `tools/Text_select_captcha` 文件夹中
 
 # 缓存文件所在位置
 
@@ -402,4 +412,10 @@ BLOCKQUOTE=true  # 是否显示转发的内容(主要是微博)，默认打开�
 
 # 更新日志
 
+- 2023.09.16 增加了B站验证码识别，提高动态截图成功率[（下载Text_select_captcha.exe）](#一些文件生成或下载)，可在设置里选择开启或关闭。更新api的使用（[#3](https://github.com/luoxuebinfei/luo_bot/issues/3)）
+
 - 2023.09.13 修复 FlareSolverr v3.3.4不能使用的问题（[#891](https://github.com/FlareSolverr/FlareSolverr/issues/891)）,更新v3.3.5版本既可解决。修复Soutubot无法使用的问题（~~力大砖飞~~）。需要更新代码和依赖（`git pull`,`pipenv install`）。
+
+# 使用项目
+
+- 解决B站验证码 -> [Text_select_captcha](https://github.com/MgArcher/Text_select_captcha)

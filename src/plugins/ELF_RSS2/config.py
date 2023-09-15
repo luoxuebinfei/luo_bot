@@ -53,6 +53,8 @@ class ELFConfig(BaseConfig):
     telegram_admin_ids: List[int] = []  # Telegram 管理员 ID 列表，用于接收离线通知和管理机器人
     telegram_bot_token: Optional[str] = None  # Telegram 机器人的 token
 
+    text_select_captcha: bool = True    # B站文字验证码选择器开关
+
 
 config = ELFConfig(**get_driver().config.dict())
 logger.debug(f"RSS Config loaded: {config!r}")

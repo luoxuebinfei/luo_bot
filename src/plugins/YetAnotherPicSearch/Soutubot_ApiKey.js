@@ -918,3 +918,4 @@ console.log(RC());
 function run() {
     return (RC())
 }
+run()

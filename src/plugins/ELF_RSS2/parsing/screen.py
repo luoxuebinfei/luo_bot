@@ -9,6 +9,7 @@ from playwright._impl._api_types import TimeoutError
 from nonebot.log import logger
 from pathlib import Path
 from undetected_playwright import stealth_async
+from ..config import config
 
 
 async def bili_screen(dt_id) -> str | None:
@@ -30,7 +31,8 @@ async def bili_screen(dt_id) -> str | None:
         js_file_path = Path.cwd() / "tools/stealth.min.js"
         await page.add_init_script(js_file_path.__str__())
         await page.goto(f'https://t.bilibili.com/{dt_id}')
-        await cap(page)
+        if config.text_select_captcha:
+            await cap(page)
         try:
             await page.locator("//*[@id=\"internationalHeader\"]/div").evaluate_all(
                 "nodes=>nodes.forEach((node)=>node.remove())")

@@ -1,4 +1,8 @@
+import base64
+import io
 import json
+import math
+import time
 
 import httpx
 from nonebot.log import logger
@@ -11,6 +15,8 @@ from diskcache import Cache
 
 import cloudscraper
 from pathlib import Path
+
+from requests_toolbelt import MultipartEncoder
 
 from .config import config
 from . import saucenao_search
@@ -68,7 +74,19 @@ async def write_to_file(data: dict):
         f.close()
 
 
-async def cf() -> (str, str):
+def apikey(ua: str):
+    """
+    apikey的python实现
+    :param ua:
+    :return:
+    """
+    timestamp = int(math.pow(round(time.time()), 2) + math.pow(len(ua), 2) + 1380756603136)
+    timestamp -= (timestamp % 100)
+    b64_str = base64.b64encode(str(timestamp).encode('ascii')).decode('ascii')
+    return b64_str.rstrip('=')[::-1]
+
+
+async def cf() -> (dict, str):
     """
     解决cloudflare验证
     :return:
@@ -94,9 +112,9 @@ async def cf() -> (str, str):
         return None, None
 
 
-async def get_result(image_bytes: bytes, cookies: str = None, useragent: str = None) -> dict | None:
+async def get_result_by_chrome(image_bytes: bytes, cookies: str = None, useragent: str = None) -> dict | None:
     """
-    获取搜图结果
+    获取搜图结果,使用浏览器的方法
     :param useragent:
     :param cookies:
     :param image_bytes: 传入的图片字节
@@ -122,7 +140,7 @@ async def get_result(image_bytes: bytes, cookies: str = None, useragent: str = N
         if await page.get_by_text("检查站点连接是否安全").is_visible():
             await context.close()
             await browser.close()
-            return await get_result(image_bytes, None, None)
+            return await get_result_by_chrome(image_bytes, None, None)
         # await page.screenshot(path=Path.cwd() / "src/plugins/YetAnotherPicSearch/1.png".__str__())
         # 获取响应对象
         async with page.expect_response("https://soutubot.moe/api/search") as response_info:
@@ -143,6 +161,68 @@ async def get_result(image_bytes: bytes, cookies: str = None, useragent: str = N
             return None
 
 
+async def get_result_by_api(image_bytes: bytes, cookies, useragent) -> dict | None:
+    """
+    使用api请求
+    :param image_bytes:
+    :param cookies:
+    :param useragent:
+    :return:
+    """
+    for num in range(1, 4):
+        ck = ""
+        if num > 1:
+            cookies, useragent = await cf()
+            if cookies is None:
+                return None
+        for i in cookies:
+            if i['name'] == "cf_clearance":
+                ck = f"{i['name']}={i['value']}"
+        headers = {
+            "sec-ch-ua": "\"Google Chrome\";v=\"119\", \"Chromium\";v=\"119\", \"Not?A_Brand\";v=\"24\"",
+            "dnt": "1",
+            "sec-ch-ua-mobile": "?0",
+            "user-agent": useragent,
+            "content-type": f"multipart/form-data; boundary=----WebKitFormBoundaryqAejXNBQlT6o5kOh",
+            "accept": "application/json, text/plain, */*",
+            "x-requested-with": "XMLHttpRequest",
+            "x-api-key": apikey(useragent),
+            "sec-ch-ua-platform": "\"Windows\"",
+            "origin": "https://soutubot.moe",
+            "sec-fetch-site": "same-origin",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-dest": "empty",
+            "referer": "https://soutubot.moe/",
+            "accept-language": "zh-CN,zh;q=0.9",
+            "cookie": ck
+        }
+        # files = {
+        #     'Content-Disposition': 'form-data; name="file"; filename="image"',
+        #     'file': ('image', io.BytesIO(image_bytes), 'application/octet-stream'),
+        #     'factor': '1.2'
+        # }
+        # form_data = MultipartEncoder(files, boundary="----WebKitFormBoundaryqAejXNBQlT6o5kOh")
+        # response = requests.post("https://soutubot.moe/api/search", headers=headers, data=form_data)
+        d = {
+            'factor': '1.2',
+        }
+        file = {
+            'file': ('image', image_bytes, 'application/octet-stream'),
+        }
+        proxies = {
+            "http://": config.proxy,
+            "https://": config.proxy,
+        }
+        async with httpx.AsyncClient(proxies=proxies) as c:
+            response = await c.post("https://soutubot.moe/api/search", headers=headers, data=d, files=file, timeout=20)
+        if response.status_code == 200:
+            return response.json()
+        else:
+            logger.warning(f"soutubot_api响应状态码：{response.status_code}\n响应内容：{response.text}")
+            continue
+    return None
+
+
 async def soutu_search(url: str, mode: str, client: ClientSession, hide_img: bool, _cache: Cache, md5: str) -> List[
     str]:
     await initialization()
@@ -159,7 +239,8 @@ async def soutu_search(url: str, mode: str, client: ClientSession, hide_img: boo
         # 从文件中读取
         data = await read_from_file()
         cookies, useragent = data["cookies"], data["user-agent"]
-        json_res = await get_result(img_bytes, cookies, useragent)
+        # json_res = await get_result_by_chrome(img_bytes, cookies, useragent)
+        json_res = await get_result_by_api(img_bytes, cookies, useragent)
         for i in json_res["data"][:3]:
             # 如果匹配度超过80
             thumbnail = await handle_img(i["previewImageUrl"], hide_img)  # 缩略图
