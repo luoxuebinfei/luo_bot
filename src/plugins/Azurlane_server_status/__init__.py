@@ -124,9 +124,9 @@ async def __init__():
         # trigger = IntervalTrigger(seconds=1)
         logger.info("【Azurlane_server_status】碧蓝航线服务器状态监控定时任务添加成功！每1小时触发1次！")
     else:
-        # 制作一个"5分钟/次"触发器
-        trigger = CronTrigger(minute="0/5", hour="*", day="*", month="*")
-        logger.info("【Azurlane_server_status】碧蓝航线服务器状态监控定时任务添加成功！每5分钟触发1次！")
+        # 制作一个"2分钟/次"触发器
+        trigger = CronTrigger(minute="0/2", hour="*", day="*", month="*")
+        logger.info("【Azurlane_server_status】碧蓝航线服务器状态监控定时任务添加成功！每2分钟触发1次！")
     scheduler.add_job(
         func=run_job,  # 要添加任务的函数，不要带参数
         trigger=trigger,  # 触发器
@@ -148,20 +148,18 @@ async def run_job():
         new_status_dict[i] = await get_server_status(i)
     if not old_status == new_status_dict:
         trigger = None
-        x = True
-        for i, j in new_status_dict.items():
-            if j:
-                x = True
-            else:
-                x = False
+        if list(new_status_dict.values()) == [True, True, True]:
+            x = True
+        else:
+            x = False
         if x:
             # 制作一个整点触发器
             trigger = CronTrigger(minute="0", hour="*", day="*", month="*")
             logger.info("【Azurlane_server_status】触发器修改为每1小时触发1次！")
         else:
-            # 制作一个"5分钟/次"触发器
-            trigger = CronTrigger(minute="0/5", hour="*", day="*", month="*")
-            logger.info("【Azurlane_server_status】触发器修改为每5分钟触发1次！")
+            # 制作一个"2分钟/次"触发器
+            trigger = CronTrigger(minute="0/2", hour="*", day="*", month="*")
+            logger.info("【Azurlane_server_status】触发器修改为每2分钟触发1次！")
         try:
             # 修改任务
             scheduler.reschedule_job(job_id="国服", trigger=trigger)
@@ -182,6 +180,7 @@ async def run_job():
                 )
         with open(DATA_FILE, "w+", encoding="utf-8") as f:
             f.write(json.dumps(new_status_dict, ensure_ascii=False))
+        logger.info(f"【Azurlane_server_status】{msg}")
     logger.info("【Azurlane_server_status】碧蓝航线服务器状态监控运行中！")
 
 

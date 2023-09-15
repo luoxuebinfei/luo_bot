@@ -115,7 +115,7 @@ async def get_result(image_bytes: bytes, cookies: str = None, useragent: str = N
         await stealth_async(context)
         page = await context.new_page()
         # 隐藏webdriver
-        js_file_path = Path.cwd() / "src/plugins/YetAnotherPicSearch/stealth.min.js"
+        js_file_path = Path.cwd() / "tools/stealth.min.js"
         await page.add_init_script(js_file_path.__str__())
         await page.goto("https://soutubot.moe/")
         # 检查cookies是否过期

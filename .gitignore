@@ -150,3 +150,4 @@ cache/
 node_modules/
 
 # End of https://www.toptal.com/developers/gitignore/api/python
+tools/Text_select_captcha/Text_select_captcha.exe

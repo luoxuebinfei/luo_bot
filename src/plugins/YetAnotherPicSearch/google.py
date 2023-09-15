@@ -22,6 +22,7 @@ proxies = config.proxy
 async def google_search(url: str) -> list[str]:
     async with Network(proxies=proxies) as client:
         google = Google(client=client)
+        # 疑似接口失效
         resp = await google.search(url=url)
         result = await show_result(resp)
         if result is None:
@@ -34,7 +35,10 @@ async def show_result(resp: Optional[GoogleResponse]) -> list[str] | None:
     if not resp:
         return None
     # logger.info(resp.origin)  # Original Data
-    msg_list = [f"搜索结果页面：{resp.url}"]
+    try:
+        msg_list = [f"搜索结果页面：{resp.url}"]
+    except AttributeError as e:
+        msg_list = []
     # logger.info(resp.url)
     # logger.info(resp.page_number)
     # try to get first result with thumbnail
