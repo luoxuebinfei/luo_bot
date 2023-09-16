@@ -213,13 +213,16 @@ async def get_result_by_api(image_bytes: bytes, cookies, useragent) -> dict | No
             "http://": config.proxy,
             "https://": config.proxy,
         }
-        async with httpx.AsyncClient(proxies=proxies) as c:
-            response = await c.post("https://soutubot.moe/api/search", headers=headers, data=d, files=file, timeout=20)
-        if response.status_code == 200:
-            return response.json()
-        else:
-            logger.warning(f"soutubot_api响应状态码：{response.status_code}\n响应内容：{response.text}")
-            continue
+        try:
+            async with httpx.AsyncClient(proxies=proxies) as c:
+                response = await c.post("https://soutubot.moe/api/search", headers=headers, data=d, files=file, timeout=20)
+            if response.status_code == 200:
+                return response.json()
+            else:
+                logger.warning(f"soutubot_api响应状态码：{response.status_code}\n响应内容：{response.text}")
+                continue
+        except httpx.ReadTimeout:
+            logger.warning("soutubot连接读取超时...")
     return None
 
 

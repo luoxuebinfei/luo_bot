@@ -9,6 +9,8 @@ from playwright._impl._api_types import TimeoutError
 from nonebot.log import logger
 from pathlib import Path
 from undetected_playwright import stealth_async
+
+
 from ..config import config
 
 
@@ -20,7 +22,8 @@ async def bili_screen(dt_id) -> str | None:
     :return: base64
     """
     async with async_playwright() as p:
-        browser = await p.firefox.launch(headless=True)
+        browser = await p.chromium.launch(headless=True, slow_mo=200,
+                                          args=['--disable-blink-features=AutomationControlled'])
         context = await browser.new_context(
             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
                        "Chrome/115.0.0.0 Safari/537.36",
@@ -118,9 +121,10 @@ async def cap(page: Page):
                 img_ys = page.locator('.geetest_item_img')
                 img_box = await img_ys.bounding_box()
                 exe_path = Path.cwd() / "tools/Text_select_captcha/Text_select_captcha.exe"
-                p = await asyncio.create_subprocess_exec(*[exe_path.__str__(), "-u", url],
-                                                         stdout=subprocess.PIPE,
-                                                         stderr=subprocess.PIPE)
+                p = await asyncio.create_subprocess_exec(
+                    *[exe_path.__str__(), "-u", url],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE)
                 # 等待进程完成或超时
                 stdout, stderr = await asyncio.wait_for(p.communicate(), timeout=10)
                 for box in json.loads(stdout.decode().strip()):
@@ -132,11 +136,11 @@ async def cap(page: Page):
                 if page.locator(
                         ".geetest_result_tip.geetest_up.geetest_success,.geetest_result_tip.geetest_up.geetest_fail"):
                     if await page.locator(".geetest_success").count() == 1:
-                        print("破解验证码成功!")
+                        logger.info("破解验证码成功!")
                         break
                     elif await page.locator(".geetest_fail").count() == 1:
                         # 防止验证码url刷新不及时
-                        await page.wait_for_timeout(2000)
+                        await page.wait_for_timeout(2500)
                         if await page.locator(".geetest_panel_error_content").is_visible(timeout=2000):
                             await page.locator(".geetest_panel_error_content").click(timeout=2000)
                             continue
@@ -152,3 +156,7 @@ async def cap(page: Page):
         except asyncio.TimeoutError:
             logger.warning("B站验证码识别程序运行错误...")
             continue
+
+
+if __name__ == '__main__':
+    asyncio.run(bili_screen(841806739575668744))

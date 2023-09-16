@@ -22,6 +22,7 @@ async def saucenao_search(
         "danbooru": 9,
         "anime": [21, 22],
         "doujin": [18, 38],
+        "sau": 999
     }
     if isinstance(db := saucenao_db[mode], list):
         saucenao = SauceNAO(
