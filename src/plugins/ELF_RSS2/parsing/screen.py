@@ -22,7 +22,7 @@ async def bili_screen(dt_id) -> str | None:
     :return: base64
     """
     async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True, slow_mo=200,
+        browser = await p.chromium.launch(headless=True, slow_mo=500,
                                           args=['--disable-blink-features=AutomationControlled'])
         context = await browser.new_context(
             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -39,9 +39,12 @@ async def bili_screen(dt_id) -> str | None:
         try:
             await page.locator("//*[@id=\"internationalHeader\"]/div").evaluate_all(
                 "nodes=>nodes.forEach((node)=>node.remove())")
+            # 去除头部横栏
+            await page.locator("//*[@id=\"bili-header-container\"]/div").evaluate_all(
+                "nodes=>nodes.forEach((node)=>node.remove())")
             await page.locator('//*[@class="unlogin-popover unlogin-popover-avatar"]').evaluate_all(
                 "nodes=>nodes.forEach((node)=>node.remove())")
-            await page.mouse.wheel(10000, 10000)
+            await page.mouse.wheel(1000, 1000)
             await page.wait_for_timeout(100)
             await page.locator("//*[@class='login-tip']").evaluate_all("nodes=>nodes.forEach((node)=>node.remove())")
             await page.wait_for_load_state("networkidle", timeout=5000)
@@ -132,7 +135,7 @@ async def cap(page: Page):
                     x_location = img_box['x'] + x1 + 5
                     y_location = img_box['y'] + y1 + 5
                     await page.mouse.click(x_location, y_location)
-                await page.locator(".geetest_commit_tip").click()
+                await page.locator(".geetest_commit_tip").click(timeout=2000)
                 if page.locator(
                         ".geetest_result_tip.geetest_up.geetest_success,.geetest_result_tip.geetest_up.geetest_fail"):
                     if await page.locator(".geetest_success").count() == 1:
@@ -159,4 +162,4 @@ async def cap(page: Page):
 
 
 if __name__ == '__main__':
-    asyncio.run(bili_screen(841806739575668744))
+    asyncio.run(bili_screen(843705583268790274))
