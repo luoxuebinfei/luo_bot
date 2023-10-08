@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import asyncio
+import base64
 import json
 
 import apscheduler
 import nonebot
+import requests
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
 from apscheduler.executors.pool import ProcessPoolExecutor, ThreadPoolExecutor
@@ -103,6 +105,15 @@ start_metaevent = on_metaevent(rule=check_first_connect, temp=True)
 
 @start_metaevent.handle()
 async def __init__():
+    await monitor_server_status()
+    await sunday_reminder()
+
+
+async def monitor_server_status():
+    """
+    监控服务器状态
+    :return:
+    """
     status_dict = {}
     for i in ["官服", "苹果", "渠道服"]:
         status_dict[i] = await get_server_status(i)
@@ -138,6 +149,26 @@ async def __init__():
         processpool=ProcessPoolExecutor(8),  # 最大进程
         coalesce=True,  # 积攒的任务是否只跑一次，是否合并所有错过的Job
     )
+
+
+async def sunday_reminder():
+    """
+    周日提醒每周礼包领取任务创建
+    :return:
+    """
+    trigger = CronTrigger(minute="30", hour="23", day_of_week="6", month="*")
+    scheduler.add_job(
+        func=sunday_send_msg,  # 要添加任务的函数，不要带参数
+        trigger=trigger,  # 触发器
+        id="周日提醒",
+        args=(),  # 函数的参数列表，注意：只有一个值时，不能省略末尾的逗号
+        misfire_grace_time=30,  # 允许的误差时间，建议不要省略
+        max_instances=10,  # 最大并发
+        default=ThreadPoolExecutor(64),  # 最大线程
+        processpool=ProcessPoolExecutor(8),  # 最大进程
+        coalesce=True,  # 积攒的任务是否只跑一次，是否合并所有错过的Job
+    )
+    logger.info("【Azurlane_server_status】周日提醒定时任务添加成功！将在每周日 23:30 发送消息提醒！")
 
 
 async def run_job():
@@ -184,20 +215,34 @@ async def run_job():
     logger.info("【Azurlane_server_status】碧蓝航线服务器状态监控运行中！")
 
 
+async def sunday_send_msg():
+    """
+    周日提醒消息发送
+    :return:
+    """
+    # 获取一张色图加入消息
+    msg = f"【碧蓝航线】今天是周日！不要忘记领取每周礼包和周任务奖励哦~"
+    bot = nonebot.get_bot()
+    for n in config.az_group:
+        await bot.send_msg(group_id=n, message=msg)
+
+
+
 if __name__ == '__main__':
-
-    # 运行异步调度器
-    scheduler.start()
-
-    # 使用 asyncio 事件循环运行异步任务
-    loop = asyncio.get_event_loop()
-    try:
-        loop.run_forever()
-        scheduler.print_jobs()
-    except KeyboardInterrupt:
-        pass
-    finally:
-        scheduler.shutdown()
-        loop.close()
+    pass
+    # # 运行异步调度器
+    # scheduler.start()
+    #
+    # # 使用 asyncio 事件循环运行异步任务
+    # loop = asyncio.get_event_loop()
+    # try:
+    #     loop.run_forever()
+    #     scheduler.print_jobs()
+    # except KeyboardInterrupt:
+    #     pass
+    # finally:
+    #     scheduler.shutdown()
+    #     loop.close()
 
     # scheduler.remove_job("test")
+    # scheduler.add_job(sunday_send_msg()
