@@ -1,0 +1,32 @@
+YetAnotherPicSearch 使用指南
+
+◆ 直接发送图片或回复含图片的消息，自动使用默认引擎搜索
+
+◆ 引擎说明与参数
+    --all：使用 SauceNAO 引擎搜索，若相似度过低自动使用 ascii2d
+    --pixiv：使用 SauceNAO 搜索 Pixiv
+    --danbooru：使用 SauceNAO 搜索 Danbooru
+    --anime：使用 SauceNAO 搜索 Anime ，若结果不理想自动使用 WhatAnime
+    --doujin：使用 SauceNAO 搜索同人作品，若相似度过低自动使用 ascii2d
+    --fakku：使用 SauceNAO 搜索 Fakku，若相似度过低自动使用 ascii2d 并额外返回 EHentai 或 NHentai 链接
+    --a2d：使用 ascii2d 阶调检索
+    --a2d-color：使用 ascii2d 色彩检索
+    --iqdb：使用 iqdb 引擎（所有数据库）
+    --iqdb-anime：使用 iqdb 引擎检索动画数据库
+    --iqdb-danbooru：使用 iqdb 引擎检索 Danbooru 数据库
+    --iqdb-konachan：使用 iqdb 引擎检索 Konachan 数据库
+    --iqdb-yandere：使用 iqdb 引擎检索 Yande.re 数据库
+    --iqdb-gelbooru：使用 iqdb 引擎检索 Gelbooru 数据库
+    --iqdb-zerochan：使用 iqdb 引擎检索 Zerochan 数据库
+    --iqdb-sankaku：使用 iqdb 引擎检索 SankakuChannel 数据库
+    --whatanime：使用 trace.moe 搜索番剧
+    --ehentai：使用 EHentai 搜索本子
+    --nhentai：使用 NHentai 搜索本子
+    --baidu：使用百度搜图引擎
+    --google：使用 Google 搜图引擎
+    --yandex：使用 Yandex 搜图引擎
+    --soutubot：使用 Soutubot 搜图引擎
+
+◆ 其他参数
+    --purge：无视缓存重新搜索
+    -h：显示本使用指南
